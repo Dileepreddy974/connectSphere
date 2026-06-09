@@ -13,6 +13,7 @@ import messageRoutes from './routes/messages.js';
 import { errorHandler } from './middleware/auth.js';
 import { connectDB } from './config/db.js';
 import config from './config.js';
+import path from 'path';
 import {
   apiRateLimiter,
   authRateLimiter,
@@ -55,7 +56,7 @@ app.use(helmet({
 app.use(morgan('dev'));
 app.use(responseCompression);
 app.use(express.json({ limit: config.httpBodyLimit }));
-app.use(express.urlencoded({ limit: config.httpBodyLimit, extended: true }));
+app.use(express.static(path.resolve(__dirname, '../../frontend/build')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -191,11 +192,18 @@ io.on('connection', (socket) => {
 app.use(errorHandler);
 
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
+app.get('*', (req, res) => {
+  // If the request is for an API route we keep the JSON 404 response
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({
+      success: false,
+      message: 'Route not found'
+    });
+  }
+
+  // Serve React build for any other route
+  const frontendBuildPath = path.resolve(__dirname, '../../frontend/build');
+  res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
 
