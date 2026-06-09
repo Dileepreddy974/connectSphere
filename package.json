@@ -1,0 +1,22 @@
+{
+  "name": "connectsphere",
+  "version": "1.0.0",
+  "description": "Real-time video conferencing and collaboration platform",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "install-all": "npm install && npm --prefix frontend install && npm --prefix backend install",
+    "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend start\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend start",
+    "build": "npm --prefix frontend run build && npm --prefix backend run build",
+    "start": "npm --prefix backend start",
+    "test": "npm --prefix backend run test && npm --prefix frontend run test"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}

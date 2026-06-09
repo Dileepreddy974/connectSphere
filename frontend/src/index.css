@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Patrick Hand', cursive;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #fffaf0; /* Warm doodle background */
+  color: #1e293b;
+}
+
+/* Doodle Border Effect (Rough Edges) */
+.doodle-border {
+  border: 2px solid #1e293b;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
+}
+
+/* Doodle Button Effect */
+.doodle-button {
+  border: 2px solid #1e293b !important;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
+  background: white;
+  transition: all 0.2s ease;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  box-shadow: 2px 2px 0px 0px #1e293b;
+}
+
+.doodle-button:hover {
+  transform: rotate(-1.5deg) scale(1.05);
+  box-shadow: 5px 5px 0px 0px #1e293b;
+}
+
+.doodle-button:active {
+  transform: scale(0.95);
+  box-shadow: 1px 1px 0px 0px #1e293b;
+}
+
+/* Doodle Utility Classes */
+.doodle-card {
+  background: white;
+  border: 2px solid #1e293b;
+  border-radius: 15px 225px 15px 255px/225px 15px 255px 15px;
+  box-shadow: 4px 4px 0px 0px #1e293b;
+}
+
+/* Doodle Animations */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1deg); }
+}
+
+@keyframes jitter {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(1px, 1px); }
+  50% { transform: translate(-1px, 0.5px); }
+  75% { transform: translate(0.5px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.4s infinite ease-in-out;
+}
+
+.animate-jitter {
+  animation: jitter 0.2s infinite ease-in-out;
+}
+
+.hover-wiggle:hover {
+  animation: wiggle 0.4s infinite ease-in-out;
+}
+
+.hover-jitter:hover {
+  animation: jitter 0.2s infinite ease-in-out;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fffaf0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  border: 1px solid #1e293b;
+}
+
+/* Navigation Overrides */
+.nav-link {
+  transition: all 0.2s ease;
+}
+.nav-link:hover {
+  transform: rotate(-2deg);
+  text-decoration: underline wavy #6366f1;
+}
