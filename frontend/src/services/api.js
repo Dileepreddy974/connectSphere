@@ -1,7 +1,11 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Use the environment provided API URL in production or hosting platforms.
+// Relying on a hardcoded localhost fallback in production can cause issues,
+// so we only use `REACT_APP_API_URL` here. For local development, set
+// REACT_APP_API_URL in your `.env` (e.g. REACT_APP_API_URL=http://localhost:5000/api).
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 // Create axios instance
 const apiClient = axios.create({
