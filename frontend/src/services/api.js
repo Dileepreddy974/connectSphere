@@ -7,6 +7,11 @@ import Cookies from 'js-cookie';
 // REACT_APP_API_URL in your `.env` (e.g. REACT_APP_API_URL=http://localhost:5000/api).
 const API_BASE_URL = process.env.REACT_APP_API_URL;
 
+// Validate API base URL and warn if missing (prevents silent production failures)
+if (!API_BASE_URL) {
+  console.warn('REACT_APP_API_URL is not set. API requests will fail in production. Set REACT_APP_API_URL in your environment.');
+}
+
 // Create axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
