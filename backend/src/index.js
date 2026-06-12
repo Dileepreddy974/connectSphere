@@ -1,51 +1,62 @@
-{
-  "name": "connectsphere-backend",
-  "version": "1.0.0",
-  "description": "ConnectSphere - Real-time video conferencing backend",
-  "main": "src/index.js",
-  "type": "module",
-  "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
-    "build": "echo \"No build needed for Node.js backend\"",
-    "test": "jest --watchAll=false",
-    "test:watch": "jest"
-  },
-  "keywords": [
-    "video",
-    "conferencing",
-    "webrtc",
-    "socket.io",
-    "collaboration"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "compression": "^1.8.1",
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "express-rate-limit": "^6.7.0",
-    "ioredis": "^5.3.2",
-    "rate-limit-redis": "^2.1.0",
-    "prom-client": "^14.1.1",
-    "express-validator": "^7.0.0",
-    "helmet": "^8.2.0",
-    "jsonwebtoken": "^9.0.0",
-    "mongoose": "^7.0.3",
-    "morgan": "^1.10.1",
-    "multer": "^1.4.5-lts.1",
-    "socket.io": "^4.6.1"
-  },
-  "devDependencies": {
-    "eslint": "^8.38.0",
-    "jest": "^29.5.0",
-    "mongodb-memory-server": "^11.1.0",
-    "nodemon": "^2.0.20",
-    "supertest": "^6.3.3"
-  },
-  "engines": {
-    "node": ">=16.0.0"
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import { createServer } from 'http';
+
+dotenv.config();
+
+const app = express();
+const server = createServer(app);
+
+app.use(express.json());
+
+app.use(
+  cors({
+    origin: true,
+    credentials: true
+  })
+);
+
+// Health endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'Server is running',
+    timestamp: new Date()
+  });
+});
+
+// Ready endpoint
+app.get('/ready', (req, res) => {
+  const ready = mongoose.connection.readyState === 1;
+
+  res.status(ready ? 200 : 503).json({
+    status: ready ? 'ready' : 'not ready',
+    database: mongoose.connection.readyState
+  });
+});
+
+const PORT = process.env.PORT || 5000;
+
+async function startServer() {
+  try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI environment variable is missing');
+    }
+
+    await mongoose.connect(process.env.MONGODB_URI);
+
+    console.log('✅ MongoDB Connected');
+
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
   }
 }
+
+startServer();
+
+export { app, server };s
