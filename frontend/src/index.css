@@ -14,8 +14,8 @@ body {
   font-family: 'Patrick Hand', cursive;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #fffaf0; /* Warm doodle background */
-  color: #1e293b;
+  background-color: #2a2a2a; /* Dark background requested */
+  color: #ffffff;
 }
 
 /* Doodle Border Effect (Rough Edges) */
@@ -25,6 +25,18 @@ body {
 }
 
 /* Doodle Button Effect */
+.doodle-button,
+button,
+input[type="submit"],
+input[type="button"] {
+  color: #000 !important;
+}
+
+.doodle-button,
+.doodle-button * {
+  color: #000 !important;
+}
+
 .doodle-button {
   border: 2px solid #1e293b !important;
   border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;

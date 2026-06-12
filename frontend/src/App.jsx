@@ -11,7 +11,7 @@ const RequireAuth = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+      <div className="min-h-screen flex items-center justify-center bg-[#2a2a2a] text-white">
         <div className="rounded-3xl border border-slate-700 bg-slate-900/80 p-8 shadow-xl">
           <p className="text-lg">Checking authentication...</p>
         </div>
@@ -31,7 +31,7 @@ const HomeRedirect = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+      <div className="min-h-screen flex items-center justify-center bg-[#2a2a2a] text-white">
         <div className="rounded-3xl border border-slate-700 bg-slate-900/80 p-8 shadow-xl">
           <p className="text-lg">Loading...</p>
         </div>
