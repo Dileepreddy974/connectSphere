@@ -33,9 +33,9 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const response = await authService.login({ email, password });
-      tokenService.setToken(response.data.token);
-      userService.setUser(response.data.user);
-      setUser(response.data.user);
+      tokenService.setToken(response.token);
+      userService.setUser(response.user);
+      setUser(response.user);
       navigate('/dashboard');
       return response;
     } catch (error) {
@@ -53,9 +53,9 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const response = await authService.register({ name, email, password, confirmPassword });
-      tokenService.setToken(response.data.token);
-      userService.setUser(response.data.user);
-      setUser(response.data.user);
+      tokenService.setToken(response.token);
+      userService.setUser(response.user);
+      setUser(response.user);
       navigate('/dashboard');
       return response;
     } catch (error) {
