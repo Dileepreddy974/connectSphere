@@ -239,7 +239,7 @@ const MeetingRoom = () => {
       </main>
 
       {/* Control Bar */}
-      <footer className="h-20 flex items-center justify-center px-6 bg-[#1a1a1a] text-white">
+      <footer className="h-20 flex items-center justify-center px-6 bg-[#3b3b3b] text-white">
         <div className="flex items-center gap-1 sm:gap-2">
           <button 
             onClick={handleToggleAudio}
