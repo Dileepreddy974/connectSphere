@@ -20,7 +20,6 @@ const FilePanel = ({ roomId, onClose }) => {
 
   useEffect(() => {
     fetchFiles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
   const handleFileUpload = async (e) => {
@@ -70,8 +69,8 @@ const FilePanel = ({ roomId, onClose }) => {
   };
 
   return (
-    <aside className="w-80 doodle-card flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
-      <div className="p-4 flex justify-between items-center bg-white doodle-border">
+    <aside className="w-80 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-right duration-300">
+      <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white/80">
         <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900">
           <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
           Shared Files
@@ -84,7 +83,7 @@ const FilePanel = ({ roomId, onClose }) => {
         </button>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar bg-white">
+      <div className="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar">
         {isLoading ? (
           <div className="flex items-center justify-center h-full text-slate-500 text-xs">
             Loading files...
@@ -124,7 +123,7 @@ const FilePanel = ({ roomId, onClose }) => {
         {uploadError && (
           <div className="mb-2 text-xs text-red-600">{uploadError}</div>
         )}
-        <label className="flex items-center justify-center gap-2 w-full doodle-button bg-indigo-500 hover:bg-indigo-400 text-white py-3 rounded-2xl cursor-pointer transition-all active:scale-95 font-semibold text-sm">
+        <label className="flex items-center justify-center gap-2 w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-2xl cursor-pointer transition-all shadow active:scale-95 font-semibold text-sm">
           {isUploading ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

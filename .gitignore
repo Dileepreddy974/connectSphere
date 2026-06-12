@@ -38,3 +38,4 @@ uploads/
 # Cache
 .cache/
 .next/
+.vercel

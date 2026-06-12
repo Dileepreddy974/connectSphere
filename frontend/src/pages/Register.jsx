@@ -32,74 +32,74 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900/95 p-8 shadow-2xl shadow-black/20">
-        <h1 className="text-3xl font-semibold text-white mb-2">Create a ConnectSphere account</h1>
-        <p className="text-sm text-slate-400 mb-6">Start secure meetings and collaboration with your team.</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#fffaf0] px-4 font-patrick">
+      <div className="w-full max-w-md doodle-card p-8 animate-in fade-in zoom-in duration-500 bg-white">
+        <h1 className="text-4xl font-bold text-slate-900 mb-2">Create a ConnectSphere account</h1>
+        <p className="text-lg text-slate-600 mb-6 font-medium italic">Start secure meetings and collaboration with your team.</p>
 
         {(formError || authError) && (
-          <div className="mb-4 rounded-xl bg-red-500/10 border border-red-400/20 px-4 py-3 text-sm text-red-200">
+          <div className="mb-4 doodle-border bg-rose-50 px-4 py-3 text-sm text-rose-600 font-bold animate-wiggle">
             {formError || authError}
           </div>
         )}
 
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          <label className="block text-sm text-slate-300">
-            Full name
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-2">
+            <label className="block text-lg font-bold text-slate-700 ml-1">Full name</label>
             <input
               type="text"
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-primary"
+              className="w-full doodle-border bg-white px-4 py-3 text-slate-900 outline-none transition-all focus:rotate-1 placeholder:text-slate-300"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Jane Doe"
             />
-          </label>
+          </div>
 
-          <label className="block text-sm text-slate-300">
-            Email address
+          <div className="space-y-2">
+            <label className="block text-lg font-bold text-slate-700 ml-1">Email address</label>
             <input
               type="email"
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-primary"
+              className="w-full doodle-border bg-white px-4 py-3 text-slate-900 outline-none transition-all focus:rotate-1 placeholder:text-slate-300"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
             />
-          </label>
+          </div>
 
-          <label className="block text-sm text-slate-300">
-            Password
+          <div className="space-y-2">
+            <label className="block text-lg font-bold text-slate-700 ml-1">Password</label>
             <input
               type="password"
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-primary"
+              className="w-full doodle-border bg-white px-4 py-3 text-slate-900 outline-none transition-all focus:-rotate-1 placeholder:text-slate-300"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
             />
-          </label>
+          </div>
 
-          <label className="block text-sm text-slate-300">
-            Confirm password
+          <div className="space-y-2">
+            <label className="block text-lg font-bold text-slate-700 ml-1">Confirm password</label>
             <input
               type="password"
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-primary"
+              className="w-full doodle-border bg-white px-4 py-3 text-slate-900 outline-none transition-all focus:-rotate-1 placeholder:text-slate-300"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
             />
-          </label>
+          </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-indigo-500 px-5 py-3 text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full doodle-button bg-indigo-500 text-white text-xl py-4 hover:bg-indigo-400 disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Create account'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
+        <p className="mt-8 text-center text-lg text-slate-600">
           Already registered?{' '}
-          <Link className="font-semibold text-white hover:text-primary" to="/login">
+          <Link className="font-bold text-indigo-600 hover:underline hover:rotate-2 inline-block transition" to="/login">
             Sign in
           </Link>
         </p>

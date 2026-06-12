@@ -544,11 +544,45 @@ socket.on('whiteboard-update', (update) => {
 
 ## Rate Limiting
 
-- Limit: 100 requests per 15 minutes per IP
-- Headers:
-  - `X-RateLimit-Limit`: 100
+- Default limits:
+  - General API: 200 requests per 15 minutes per IP (configurable)
+  - Auth endpoints: 50 requests per 15 minutes per user/IP (configurable)
+
+- Response: when a limit is exceeded the server returns HTTP `429 Too Many Requests` with JSON:
+
+```json
+{
+  "success": false,
+  "message": "Too many requests. Please try again later."
+}
+```
+
+- Headers (when supported by client):
+  - `X-RateLimit-Limit`: configured limit
   - `X-RateLimit-Remaining`: Requests remaining
-  - `X-RateLimit-Reset`: Unix timestamp
+  - `X-RateLimit-Reset`: Unix timestamp when window resets
+
+- Configuration (env vars / `src/config.js`):
+  - `RATE_LIMIT_WINDOW_MS` — window size in milliseconds (default 900000)
+  - `RATE_LIMIT_MAX_REQUESTS` — general API max requests (default 200)
+  - `AUTH_RATE_LIMIT_MAX_REQUESTS` — auth endpoints max requests (default 50)
+
+- Distributed limits (optional):
+  - To enable Redis-backed distributed rate limiting set:
+
+```powershell
+$env:REDIS_URL="redis://localhost:6379"
+$env:ENABLE_REDIS="true"
+```
+
+  - When enabled the server uses Redis for shared counters across instances.
+
+- Metrics and observability:
+  - The server exposes Prometheus metrics at `/metrics` (e.g. `http://localhost:5000/metrics`).
+  - Metrics added:
+    - `connectsphere_rate_limit_http_total{route,ip}` — number of HTTP rate limit events
+    - `connectsphere_rate_limit_socket_total{socketId}` — number of socket rate limit events
+
 
 ---
 

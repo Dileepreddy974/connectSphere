@@ -35,8 +35,10 @@ const config = {
   
   // Rate limiting
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
-  rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  authRateLimitMaxRequests: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS) || 20,
+  // Default increased to 200 requests per window for general API usage
+  rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 200,
+  // Auth endpoints often need tighter limits; default set to 50
+  authRateLimitMaxRequests: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS) || 50,
 
   // Traffic handling
   trustProxy: parseInt(process.env.TRUST_PROXY_HOPS) || 0,

@@ -18,5 +18,8 @@
   },
   "devDependencies": {
     "concurrently": "^7.6.0"
+  },
+  "dependencies": {
+    "serverless-http": "^4.0.0"
   }
 }
