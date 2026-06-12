@@ -36,6 +36,14 @@ httpServer.keepAliveTimeout = 65000;
 httpServer.headersTimeout = 66000;
 httpServer.maxRequestsPerSocket = 1000;
 
+// Allow multiple frontend origins via FRONTEND_URLS (comma-separated),
+// or a single FRONTEND_URL. In development allow any origin.
+const allowedOrigins = process.env.NODE_ENV === 'development'
+  ? true
+  : (process.env.FRONTEND_URLS
+      ? process.env.FRONTEND_URLS.split(',').map(s => s.trim())
+      : (process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : ['http://localhost:3000']));
+
 const io = process.env.VERCEL ? null : new Server(httpServer, {
   maxHttpBufferSize: config.socketMaxBufferSize,
   perMessageDeflate: false,
@@ -44,7 +52,7 @@ const io = process.env.VERCEL ? null : new Server(httpServer, {
     skipMiddlewares: true
   },
   cors: {
-    origin: process.env.NODE_ENV === 'development' ? true : (process.env.FRONTEND_URL || 'http://localhost:3000'),
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -53,7 +61,7 @@ const io = process.env.VERCEL ? null : new Server(httpServer, {
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'development' ? true : (process.env.FRONTEND_URL || 'http://localhost:3000'),
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(helmet({
