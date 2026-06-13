@@ -6,7 +6,7 @@ services:
     region: oregon
     repo: https://github.com/Dileepreddy974/connectSphere
     branch: main
-    root: backend
+    rootDir: backend
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -14,7 +14,9 @@ services:
         value: production
       - key: PORT
         value: "5000"
-    secrets:
       - key: MONGODB_URI
+        sync: false
       - key: JWT_SECRET
+        sync: false
       - key: CLIENT_URL
+        sync: false
