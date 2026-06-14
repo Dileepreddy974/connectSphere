@@ -259,48 +259,65 @@ const MeetingRoom = () => {
         {/* Video / Whiteboard Grid */}
         <div className="flex-1 flex flex-col gap-6 overflow-hidden">
           {isWhiteboardOpen ? (
-            <div className="flex-1 doodle-card dark:bg-slate-800 dark:border-slate-600 p-2 overflow-hidden bg-white shadow-xl">
+            <div className="flex-1 doodle-card dark:bg-slate-800 dark:border-slate-600 p-2 overflow-hidden bg-white shadow-xl relative">
                <Whiteboard roomId={roomId} />
+               {/* PiP local video on whiteboard */}
+               <div className="absolute bottom-4 right-4 w-40 sm:w-52 aspect-video doodle-card overflow-hidden shadow-2xl z-10 border-2 border-white dark:border-slate-600">
+                 <VideoBox stream={localStream} name={user?.name} isSelf={true} />
+               </div>
             </div>
           ) : (
-            <div className={`flex-1 grid gap-3 sm:gap-6 overflow-y-auto content-start custom-scrollbar p-2 ${
-              Object.keys(remoteStreams).length === 0 ? 'grid-cols-1' :
-              Object.keys(remoteStreams).length <= 1 ? 'grid-cols-1 sm:grid-cols-2' :
-              Object.keys(remoteStreams).length <= 3 ? 'grid-cols-1 sm:grid-cols-2' :
-              'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-            }`}>
-              {/* Local Video */}
-              <div className="doodle-card dark:bg-slate-800 dark:border-slate-600 overflow-hidden bg-white hover:rotate-1 transition-transform group relative aspect-video">
-                <VideoBox 
-                  stream={localStream} 
-                  name={user?.name} 
-                  isSelf={true} 
-                />
-              </div>
-
-              {/* Remote Videos */}
-              {Object.entries(remoteStreams).map(([socketId, stream]) => {
-                const participant = participants[socketId];
-                const displayName = participant?.name || `Doodler ${socketId.substring(0, 4)}`;
-                return (
-                  <div key={socketId} className="doodle-card dark:bg-slate-800 dark:border-slate-600 overflow-hidden bg-white hover:-rotate-1 transition-transform group relative aspect-video">
+            <>
+              {Object.keys(remoteStreams).length === 0 ? (
+                /* ── Solo layout: large centered video + invite hint ── */
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                  <div className="w-full max-w-2xl aspect-video doodle-card dark:bg-slate-800 dark:border-slate-600 overflow-hidden bg-white shadow-xl relative">
                     <VideoBox 
-                      stream={stream}
-                      name={displayName}
-                      isSelf={false}
+                      stream={localStream} 
+                      name={user?.name} 
+                      isSelf={true} 
                     />
                   </div>
-                );
-              })}
+                  <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm doodle-border dark:border-slate-600 px-6 py-3 shadow-sm">
+                    <div className="flex -space-x-2">
+                      <div className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold font-sans">{user?.name?.charAt(0)?.toUpperCase() || 'Y'}</div>
+                    </div>
+                    <span className="text-sm font-sans font-medium">Only you here — share the room link to invite others!</span>
+                  </div>
+                </div>
+              ) : (
+                /* ── Multi-participant grid ── */
+                <div className={`flex-1 grid gap-3 sm:gap-6 overflow-y-auto content-start custom-scrollbar p-2 ${
+                  Object.keys(remoteStreams).length <= 1 ? 'grid-cols-1 sm:grid-cols-2' :
+                  Object.keys(remoteStreams).length <= 3 ? 'grid-cols-1 sm:grid-cols-2' :
+                  'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                }`}>
+                  {/* Local Video */}
+                  <div className="doodle-card dark:bg-slate-800 dark:border-slate-600 overflow-hidden bg-white hover:rotate-1 transition-transform group relative aspect-video">
+                    <VideoBox 
+                      stream={localStream} 
+                      name={user?.name} 
+                      isSelf={true} 
+                    />
+                  </div>
 
-              {/* No one else yet */}
-              {Object.keys(remoteStreams).length === 0 && (
-                <div className="aspect-video doodle-card dark:bg-slate-800 dark:border-slate-600 bg-white flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 border-dashed animate-wiggle">
-                  <div className="text-5xl mb-4">🖍️</div>
-                  <p className="text-xl font-bold uppercase tracking-widest">Waiting for friends...</p>
+                  {/* Remote Videos */}
+                  {Object.entries(remoteStreams).map(([socketId, stream]) => {
+                    const participant = participants[socketId];
+                    const displayName = participant?.name || `Doodler ${socketId.substring(0, 4)}`;
+                    return (
+                      <div key={socketId} className="doodle-card dark:bg-slate-800 dark:border-slate-600 overflow-hidden bg-white hover:-rotate-1 transition-transform group relative aspect-video">
+                        <VideoBox 
+                          stream={stream}
+                          name={displayName}
+                          isSelf={false}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
 
