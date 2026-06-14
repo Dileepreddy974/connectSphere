@@ -1,162 +1,112 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/index.js';
-import { tokenService, userService } from '../utils/storage.js';
+import User from '../models/User.js';
+import { generateToken, sanitizeUser } from '../utils/helpers.js';
 
-const AuthContext = createContext(null);
+/**
+ * Register new user
+ */
+export const registerUser = async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body;
 
-export const AuthProvider = ({ children }) => {
-  const navigate = useNavigate();
+    const existingUser = await User.findOne({ email });
 
-  const [user, setUser] = useState(userService.getUser());
-  const [loading, setLoading] = useState(false);
-  const [authError, setAuthError] = useState(null);
-
-  useEffect(() => {
-    const token = tokenService.getToken();
-
-    if (token && !user) {
-      authService
-        .getProfile()
-        .then((response) => {
-          const profile = response.data || response.user || response;
-
-          setUser(profile);
-          userService.setUser(profile);
-        })
-        .catch(() => {
-          tokenService.removeToken();
-          userService.removeUser();
-          setUser(null);
-        });
-    }
-  }, [user]);
-
-  const handleLogin = async (email, password) => {
-    setLoading(true);
-    setAuthError(null);
-
-    try {
-      const response = await authService.login({
-        email,
-        password
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is already registered'
       });
+    }
 
-      const token = response?.data?.token;
-      const userData = response?.data?.user;
+    const user = await User.create({
+      name,
+      email,
+      password
+    });
 
-      if (!token || !userData) {
-        throw new Error('Invalid login response from server');
+    const token = generateToken(user._id, user.role);
+
+    return res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      data: {
+        token,
+        user: sanitizeUser(user)
       }
-
-      tokenService.setToken(token);
-      userService.setUser(userData);
-      setUser(userData);
-
-      navigate('/dashboard');
-
-      return response;
-    } catch (error) {
-      const errorMessage =
-        error?.message ||
-        error?.response?.data?.message ||
-        'Login failed';
-
-      setAuthError(errorMessage);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async (
-    name,
-    email,
-    password,
-    confirmPassword
-  ) => {
-    setLoading(true);
-    setAuthError(null);
-
-    try {
-      const response = await authService.register({
-        name,
-        email,
-        password,
-        confirmPassword
-      });
-
-      const token = response?.data?.token;
-      const userData = response?.data?.user;
-
-      if (!token || !userData) {
-        throw new Error('Invalid registration response from server');
-      }
-
-      tokenService.setToken(token);
-      userService.setUser(userData);
-      setUser(userData);
-
-      navigate('/dashboard');
-
-      return response;
-    } catch (error) {
-      const errorMessage =
-        error?.message ||
-        error?.response?.data?.message ||
-        'Registration failed';
-
-      setAuthError(errorMessage);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    setLoading(true);
-
-    try {
-      await authService.logout();
-    } catch (_) {
-      // Ignore logout errors
-    }
-
-    tokenService.removeToken();
-    userService.removeUser();
-    setUser(null);
-
-    navigate('/login');
-
-    setLoading(false);
-  };
-
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      authError,
-      login: handleLogin,
-      register: handleRegister,
-      logout: handleLogout,
-      isAuthenticated: !!user
-    }),
-    [user, loading, authError]
-  );
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
+/**
+ * Login user
+ */
+export const loginUser = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
 
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
+    }
+
+    const isMatch = await user.matchPassword(password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
+    }
+
+    const token = generateToken(user._id, user.role);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Logged in successfully',
+      data: {
+        token,
+        user: sanitizeUser(user)
+      }
+    });
+  } catch (error) {
+    next(error);
   }
+};
 
-  return context;
+/**
+ * Get current user profile
+ */
+export const getProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: sanitizeUser(user)
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Logout user
+ */
+export const logoutUser = async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'Logged out successfully'
+  });
 };

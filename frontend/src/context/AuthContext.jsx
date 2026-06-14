@@ -7,17 +7,22 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
+
   const [user, setUser] = useState(userService.getUser());
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
     const token = tokenService.getToken();
+
     if (token && !user) {
-      authService.getProfile()
+      authService
+        .getProfile()
         .then((response) => {
-          setUser(response.data);
-          userService.setUser(response.data);
+          const userData = response?.data || response;
+
+          setUser(userData);
+          userService.setUser(userData);
         })
         .catch(() => {
           tokenService.removeToken();
@@ -32,35 +37,76 @@ export const AuthProvider = ({ children }) => {
     setAuthError(null);
 
     try {
-      const response = await authService.login({ email, password });
-      tokenService.setToken(response.token);
-      userService.setUser(response.user);
-      setUser(response.user);
+      const response = await authService.login({
+        email,
+        password
+      });
+
+      const token = response?.data?.token;
+      const userData = response?.data?.user;
+
+      if (!token || !userData) {
+        throw new Error('Invalid login response from server');
+      }
+
+      tokenService.setToken(token);
+      userService.setUser(userData);
+      setUser(userData);
+
       navigate('/dashboard');
+
       return response;
     } catch (error) {
-      const errorMessage = error.errors ? error.errors.map(e => e.message).join(', ') : error.message;
-      setAuthError(errorMessage || 'Login failed');
+      const errorMessage =
+        error?.message ||
+        error?.response?.data?.message ||
+        'Login failed';
+
+      setAuthError(errorMessage);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRegister = async (name, email, password, confirmPassword) => {
+  const handleRegister = async (
+    name,
+    email,
+    password,
+    confirmPassword
+  ) => {
     setLoading(true);
     setAuthError(null);
 
     try {
-      const response = await authService.register({ name, email, password, confirmPassword });
-      tokenService.setToken(response.token);
-      userService.setUser(response.user);
-      setUser(response.user);
+      const response = await authService.register({
+        name,
+        email,
+        password,
+        confirmPassword
+      });
+
+      const token = response?.data?.token;
+      const userData = response?.data?.user;
+
+      if (!token || !userData) {
+        throw new Error('Invalid registration response from server');
+      }
+
+      tokenService.setToken(token);
+      userService.setUser(userData);
+      setUser(userData);
+
       navigate('/dashboard');
+
       return response;
     } catch (error) {
-      const errorMessage = error.errors ? error.errors.map(e => e.message).join(', ') : error.message;
-      setAuthError(errorMessage || 'Registration failed');
+      const errorMessage =
+        error?.message ||
+        error?.response?.data?.message ||
+        'Registration failed';
+
+      setAuthError(errorMessage);
       throw error;
     } finally {
       setLoading(false);
@@ -69,15 +115,19 @@ export const AuthProvider = ({ children }) => {
 
   const handleLogout = async () => {
     setLoading(true);
+
     try {
       await authService.logout();
     } catch (_) {
-      // ignore logout errors and clear client state
+      // Ignore logout errors
     }
+
     tokenService.removeToken();
     userService.removeUser();
     setUser(null);
+
     navigate('/login');
+
     setLoading(false);
   };
 
@@ -91,17 +141,22 @@ export const AuthProvider = ({ children }) => {
       logout: handleLogout,
       isAuthenticated: !!user
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, loading, authError]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
   }
+
   return context;
 };
