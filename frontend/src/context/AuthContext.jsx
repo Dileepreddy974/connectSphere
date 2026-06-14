@@ -131,15 +131,41 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
+  const updateProfile = async (profileData) => {
+    try {
+      const response = await authService.updateProfile(profileData);
+      const userData = response?.data || response;
+      setUser(userData);
+      userService.setUser(userData);
+      return userData;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const uploadAvatar = async (file) => {
+    try {
+      const response = await authService.uploadAvatar(file);
+      const userData = response?.data || response;
+      setUser(userData);
+      userService.setUser(userData);
+      return userData;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const value = {
-  user,
-  loading,
-  authError,
-  login: handleLogin,
-  register: handleRegister,
-  logout: handleLogout,
-  isAuthenticated: !!user
-};
+    user,
+    loading,
+    authError,
+    login: handleLogin,
+    register: handleRegister,
+    logout: handleLogout,
+    updateProfile,
+    uploadAvatar,
+    isAuthenticated: !!user
+  };
 
   return (
     <AuthContext.Provider value={value}>

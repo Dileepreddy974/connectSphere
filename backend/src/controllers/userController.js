@@ -65,3 +65,41 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
+
+/**
+ * Upload profile avatar
+ */
+export const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please upload an image file'
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.avatar = `/uploads/${req.file.filename}`;
+    user.updatedAt = Date.now();
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message
+    });
+  }
+};

@@ -44,6 +44,30 @@ export const authService = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Update profile
+  updateProfile: async (profileData) => {
+    try {
+      const response = await apiClient.put('/users/profile', profileData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Upload avatar image
+  uploadAvatar: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const response = await apiClient.put('/users/profile/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };
 

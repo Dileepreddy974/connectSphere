@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { roomService } from '../services';
+import { ProfileModal } from '../components/ProfileModal.jsx';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -14,6 +15,7 @@ const Dashboard = () => {
   const [roomToJoin, setRoomToJoin] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     fetchRooms();
@@ -73,12 +75,20 @@ const Dashboard = () => {
             <h1 className="text-5xl font-bold text-slate-900">ConnectSphere Workspace</h1>
             <p className="mt-2 text-xl text-slate-600 italic">Welcome back, <span className="text-indigo-600 font-bold underline decoration-wavy">{user?.name}</span>!</p>
           </div>
-          <button
-            onClick={logout}
-            className="doodle-button bg-rose-50 text-rose-600 text-lg hover:bg-rose-500 hover:text-white"
-          >
-            Logout
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowProfile(true)}
+              className="doodle-button bg-indigo-50 text-indigo-600 text-lg hover:bg-indigo-500 hover:text-white"
+            >
+              👤 Profile
+            </button>
+            <button
+              onClick={logout}
+              className="doodle-button bg-rose-50 text-rose-600 text-lg hover:bg-rose-500 hover:text-white"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -190,6 +200,10 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {showProfile && (
+        <ProfileModal onClose={() => setShowProfile(false)} />
+      )}
     </div>
   );
 };

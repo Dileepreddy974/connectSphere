@@ -37,6 +37,8 @@ app.use(
 );
 
 // Root Route
+app.use('/uploads', express.static('uploads'));
+
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
