@@ -1,7 +1,11 @@
 import io from 'socket.io-client';
 
-// Prefer explicit env var; fall back to same origin when not provided
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || window.location.origin;
+// Require explicit env var; no fallback for production safety
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL;
+
+if (!SOCKET_URL) {
+  console.warn('REACT_APP_SOCKET_URL is not set. Socket connections will fail. Set REACT_APP_SOCKET_URL in your environment.');
+}
 
 let socket = null;
 
