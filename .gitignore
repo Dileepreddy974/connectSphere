@@ -3,6 +3,10 @@ node_modules/
 package-lock.json
 yarn.lock
 
+# allow project lockfiles in subprojects
+!frontend/package-lock.json
+!backend/package-lock.json
+
 # Environment variables
 .env
 .env.local
