@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/index.js';
 import { tokenService, userService } from '../utils/storage.js';
@@ -131,18 +131,15 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      authError,
-      login: handleLogin,
-      register: handleRegister,
-      logout: handleLogout,
-      isAuthenticated: !!user
-    }),
-    [user, loading, authError]
-  );
+  const value = {
+  user,
+  loading,
+  authError,
+  login: handleLogin,
+  register: handleRegister,
+  logout: handleLogout,
+  isAuthenticated: !!user
+};
 
   return (
     <AuthContext.Provider value={value}>
