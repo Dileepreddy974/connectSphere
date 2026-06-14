@@ -7,6 +7,13 @@ import compression from "compression";
 import morgan from "morgan";
 import { createServer } from "http";
 
+// Routes
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/users.js";
+import roomRoutes from "./routes/rooms.js";
+import fileRoutes from "./routes/files.js";
+import messageRoutes from "./routes/messages.js";
+
 dotenv.config();
 
 const app = express();
@@ -54,6 +61,21 @@ app.get("/ready", (req, res) => {
   });
 });
 
+// API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/rooms", roomRoutes);
+app.use("/api/files", fileRoutes);
+app.use("/api/messages", messageRoutes);
+
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found"
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
@@ -70,7 +92,7 @@ async function startServer() {
       console.log(`🚀 Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error.message);
+    console.error("❌ Failed to start server:", error);
     process.exit(1);
   }
 }
