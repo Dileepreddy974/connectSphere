@@ -13,6 +13,7 @@ const useWebRTC = (roomId, userId) => {
   const [remoteStreams, setRemoteStreams] = useState({}); // { socketId: stream }
   const peerConnections = useRef({}); // { socketId: RTCPeerConnection }
   const localStreamRef = useRef(null);
+  const pendingCandidates = useRef({}); // { socketId: RTCIceCandidate[] }
 
   const createPeerConnection = useCallback((targetSocketId) => {
     if (peerConnections.current[targetSocketId]) return peerConnections.current[targetSocketId];
@@ -29,7 +30,7 @@ const useWebRTC = (roomId, userId) => {
     pc.ontrack = (event) => {
       setRemoteStreams((prev) => ({
         ...prev,
-        [targetSocketId]: event.streams[0]
+        [targetSocketId]: new MediaStream(event.streams[0].getTracks())
       }));
     };
 
@@ -70,6 +71,14 @@ const useWebRTC = (roomId, userId) => {
           console.log('Received offer from:', senderSocketId);
           const pc = createPeerConnection(senderSocketId);
           await pc.setRemoteDescription(new RTCSessionDescription(offer));
+          
+          if (pendingCandidates.current[senderSocketId]) {
+            for (const c of pendingCandidates.current[senderSocketId]) {
+              try { await pc.addIceCandidate(c); } catch(e) {}
+            }
+            delete pendingCandidates.current[senderSocketId];
+          }
+
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           socketService.emitAnswer(roomId, answer, senderSocketId);
@@ -81,6 +90,12 @@ const useWebRTC = (roomId, userId) => {
           const pc = peerConnections.current[senderSocketId];
           if (pc) {
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            if (pendingCandidates.current[senderSocketId]) {
+              for (const c of pendingCandidates.current[senderSocketId]) {
+                try { await pc.addIceCandidate(c); } catch(e) {}
+              }
+              delete pendingCandidates.current[senderSocketId];
+            }
           }
         });
 
@@ -88,8 +103,13 @@ const useWebRTC = (roomId, userId) => {
         socket.on('webrtc-ice-candidate', async ({ candidate, senderSocketId }) => {
           console.log('Received ICE candidate from:', senderSocketId);
           const pc = peerConnections.current[senderSocketId];
-          if (pc) {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          if (pc && pc.remoteDescription) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {}
+          } else {
+            if (!pendingCandidates.current[senderSocketId]) {
+              pendingCandidates.current[senderSocketId] = [];
+            }
+            pendingCandidates.current[senderSocketId].push(new RTCIceCandidate(candidate));
           }
         });
 
