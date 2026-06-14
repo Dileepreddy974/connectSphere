@@ -118,10 +118,12 @@ const MeetingRoom = () => {
     const fetchRoomDetails = async () => {
       try {
         setLoading(true);
+        // Join the room (auto-creates if it doesn't exist)
+        await roomService.joinRoom(roomId);
         const response = await roomService.getRoomDetails(roomId);
         setRoom(response.data);
       } catch (err) {
-        setError('Failed to load meeting room. It may not exist.');
+        setError('Failed to load meeting room.');
         console.error(err);
       } finally {
         setLoading(false);

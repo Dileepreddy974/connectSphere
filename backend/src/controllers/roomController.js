@@ -46,12 +46,26 @@ export const joinRoom = async (req, res, next) => {
       roomId = roomId.toLowerCase();
     }
 
-    const room = await Room.findOne({ roomId, isActive: true });
+    let room = await Room.findOne({ roomId, isActive: true });
 
+    // Auto-create room if it doesn't exist
     if (!room) {
-      return res.status(404).json({
-        success: false,
-        message: 'Room not found or inactive'
+      room = await Room.create({
+        roomId,
+        title: req.body.title || `Meeting ${roomId}`,
+        description: '',
+        isPrivate: false,
+        createdBy: req.user.id,
+        participants: [{
+          userId: req.user.id,
+          isActive: true
+        }]
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Room created and joined',
+        data: room
       });
     }
 
