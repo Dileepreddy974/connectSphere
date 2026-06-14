@@ -1,6 +1,7 @@
 import io from 'socket.io-client';
 
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+// Prefer explicit env var; fall back to same origin when not provided
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || window.location.origin;
 
 let socket = null;
 
