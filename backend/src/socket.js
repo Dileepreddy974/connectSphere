@@ -2,6 +2,8 @@ import { Server } from 'socket.io';
 import { socketRateLimiter } from './middleware/traffic.js';
 import Message from './models/Message.js';
 import Attendance from './models/Attendance.js';
+import Transcription from './models/Transcription.js';
+import { transcribeChunk, isAIEnabled } from './services/openaiService.js';
 import logger from './utils/winstonLogger.js';
 
 // Track online users per room
@@ -160,6 +162,75 @@ export const initSocket = (server) => {
       const { roomId, endedBy } = data;
       io.to(roomId).emit('meeting-ended', { roomId, endedBy, timestamp: new Date() });
       logger.info('Meeting ended', { roomId, endedBy, event: 'meeting.ended' });
+    });
+
+    // ─── Live Captions (Real-Time Transcription) ───
+    socket.on('caption-start', (data) => {
+      const { roomId, language } = data;
+      socket.data.captionsEnabled = true;
+      socket.data.captionLanguage = language || 'en';
+      io.to(roomId).emit('captions-enabled', { roomId, userId: socket.data.userId });
+      logger.info('Captions enabled', { roomId, userId: socket.data.userId });
+    });
+
+    socket.on('caption-stop', (data) => {
+      const { roomId } = data;
+      socket.data.captionsEnabled = false;
+      io.to(roomId).emit('captions-disabled', { roomId, userId: socket.data.userId });
+    });
+
+    // Receive audio chunk from client, transcribe, broadcast caption
+    socket.on('caption-chunk', async (data) => {
+      try {
+        if (!isAIEnabled()) return;
+        const { roomId, audioData, language } = data;
+
+        // audioData is base64-encoded audio
+        const audioBuffer = Buffer.from(audioData, 'base64');
+        const result = await transcribeChunk(audioBuffer, language || socket.data.captionLanguage || 'en');
+
+        // Broadcast interim caption to room
+        io.to(roomId).emit('caption-update', {
+          roomId,
+          speakerId: socket.data.userId,
+          text: result.text,
+          segments: result.segments,
+          isFinal: true,
+          timestamp: new Date()
+        });
+
+        // Persist to DB (fire-and-forget)
+        Transcription.create({
+          roomId,
+          segments: result.segments.map(seg => ({
+            speakerId: socket.data.userId,
+            text: seg.text,
+            startTime: seg.startTime,
+            endTime: seg.endTime,
+            confidence: seg.confidence
+          })),
+          fullText: result.text,
+          duration: result.duration,
+          status: 'completed',
+          language: language || 'en'
+        }).catch(() => {});
+      } catch (err) {
+        logger.error('Caption chunk processing failed', err);
+        socket.emit('caption-error', { error: err.message });
+      }
+    });
+
+    // Client-side caption from browser SpeechRecognition API
+    socket.on('live-caption', (data) => {
+      const { roomId, text, isFinal, speakerId, speakerName } = data;
+      io.to(roomId).emit('caption-update', {
+        roomId,
+        speakerId: speakerId || socket.data.userId,
+        speakerName: speakerName || 'Unknown',
+        text,
+        isFinal: isFinal || false,
+        timestamp: new Date()
+      });
     });
 
     // ─── Whiteboard Sync ───

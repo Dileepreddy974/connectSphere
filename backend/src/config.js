@@ -58,6 +58,10 @@ const config = {
   appName: 'ConnectSphere',
   appVersion: '1.0.0',
   
+  // OpenAI
+  openaiApiKey: process.env.OPENAI_API_KEY,
+  openaiSummaryModel: process.env.OPENAI_SUMMARY_MODEL || 'gpt-4o',
+  
   // System info
   cpuCount: os.cpus().length,
   totalMemory: os.totalmem(),

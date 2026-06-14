@@ -22,6 +22,7 @@ import notificationRoutes from "./routes/notifications.js";
 import invitationRoutes from "./routes/invitations.js";
 import attendanceRoutes from "./routes/attendance.js";
 import analyticsRoutes from "./routes/analytics.js";
+import aiRoutes from "./routes/ai.js";
 
 dotenv.config();
 
@@ -102,6 +103,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/invitations", invitationRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/ai", aiRoutes);
 
 // 404 + Error handlers
 app.use(notFoundHandler);

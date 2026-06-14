@@ -14,6 +14,11 @@ import { MeetingRoomSkeleton } from '../components/SkeletonLoaders.jsx';
 import { SlideRight } from '../components/PageTransition.jsx';
 import { BsMicFill, BsMicMuteFill, BsCameraVideoFill, BsCameraVideoOffFill, BsChatDots, BsFolder, BsPen, BsHandIndexFill } from 'react-icons/bs';
 import { MdScreenShare, MdStopScreenShare } from 'react-icons/md';
+import { BsTranslate, BsFileText, BsCheckSquare, BsBarChartFill } from 'react-icons/bs';
+import LiveCaptions from '../components/AI/LiveCaptions';
+import MeetingSummaryPanel from '../components/AI/MeetingSummaryPanel';
+import ActionItemsPanel from '../components/AI/ActionItemsPanel';
+import SpeakerAnalytics from '../components/AI/SpeakerAnalytics';
 
 const REACTIONS = ['\uD83D\uDC4D', '\u2764\uFE0F', '\uD83C\uDF89', '\uD83D\uDC4F', '\uD83D\uDE02', '\uD83D\uDE2E'];
 
@@ -71,6 +76,10 @@ const MeetingRoom = () => {
   const [showReactions, setShowReactions] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState([]);
   const [onlineUserIds, setOnlineUserIds] = useState([]);
+  const [isCaptionsOpen, setIsCaptionsOpen] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 
   useEffect(() => {
     const token = tokenService.getToken();
@@ -158,11 +167,37 @@ const MeetingRoom = () => {
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen);
     setIsFilesOpen(false);
+    setIsCaptionsOpen(false);
+    setIsSummaryOpen(false);
+    setIsActionsOpen(false);
+    setIsAnalyticsOpen(false);
   };
 
   const toggleFiles = () => {
     setIsFilesOpen(!isFilesOpen);
     setIsChatOpen(false);
+    setIsCaptionsOpen(false);
+    setIsSummaryOpen(false);
+    setIsActionsOpen(false);
+    setIsAnalyticsOpen(false);
+  };
+
+  const togglePanel = (panel) => {
+    const setter = {
+      captions: setIsCaptionsOpen,
+      summary: setIsSummaryOpen,
+      actions: setIsActionsOpen,
+      analytics: setIsAnalyticsOpen
+    }[panel];
+    const getter = {
+      captions: isCaptionsOpen,
+      summary: isSummaryOpen,
+      actions: isActionsOpen,
+      analytics: isAnalyticsOpen
+    }[panel];
+    setter(!getter);
+    setIsChatOpen(false);
+    setIsFilesOpen(false);
   };
 
   if (loading) {
@@ -274,6 +309,39 @@ const MeetingRoom = () => {
                 />
               </SlideRight>
             )}
+            {isCaptionsOpen && (
+              <SlideRight className="w-72 sm:w-80 h-full">
+                <LiveCaptions 
+                  roomId={roomId} 
+                  user={user} 
+                  onClose={() => setIsCaptionsOpen(false)} 
+                />
+              </SlideRight>
+            )}
+            {isSummaryOpen && (
+              <SlideRight className="w-72 sm:w-80 h-full">
+                <MeetingSummaryPanel 
+                  roomId={roomId} 
+                  onClose={() => setIsSummaryOpen(false)} 
+                />
+              </SlideRight>
+            )}
+            {isActionsOpen && (
+              <SlideRight className="w-72 sm:w-80 h-full">
+                <ActionItemsPanel 
+                  roomId={roomId} 
+                  onClose={() => setIsActionsOpen(false)} 
+                />
+              </SlideRight>
+            )}
+            {isAnalyticsOpen && (
+              <SlideRight className="w-72 sm:w-80 h-full">
+                <SpeakerAnalytics 
+                  roomId={roomId} 
+                  onClose={() => setIsAnalyticsOpen(false)} 
+                />
+              </SlideRight>
+            )}
           </AnimatePresence>
         </div>
       </main>
@@ -354,6 +422,43 @@ const MeetingRoom = () => {
             <BsHandIndexFill size={20} />
             <span className="text-[10px] sm:text-[11px] font-medium font-sans">{isHandRaised ? 'Lower' : 'Raise'}</span>
           </button>
+
+          {/* ── AI Features ── */}
+          <div className="w-px h-8 bg-slate-600 mx-1" />
+
+          <button
+            onClick={() => togglePanel('captions')}
+            className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-12 sm:w-16 h-12 sm:h-14 rounded-lg hover:bg-[#333333] dark:hover:bg-slate-700 transition ${isCaptionsOpen ? 'text-indigo-400' : ''}`}
+          >
+            <BsTranslate size={20} />
+            <span className="text-[10px] sm:text-[11px] font-medium font-sans">Captions</span>
+          </button>
+
+          <button
+            onClick={() => togglePanel('summary')}
+            className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-12 sm:w-16 h-12 sm:h-14 rounded-lg hover:bg-[#333333] dark:hover:bg-slate-700 transition ${isSummaryOpen ? 'text-emerald-400' : ''}`}
+          >
+            <BsFileText size={20} />
+            <span className="text-[10px] sm:text-[11px] font-medium font-sans">Summary</span>
+          </button>
+
+          <button
+            onClick={() => togglePanel('actions')}
+            className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-12 sm:w-16 h-12 sm:h-14 rounded-lg hover:bg-[#333333] dark:hover:bg-slate-700 transition ${isActionsOpen ? 'text-amber-400' : ''}`}
+          >
+            <BsCheckSquare size={20} />
+            <span className="text-[10px] sm:text-[11px] font-medium font-sans">Actions</span>
+          </button>
+
+          <button
+            onClick={() => togglePanel('analytics')}
+            className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-12 sm:w-16 h-12 sm:h-14 rounded-lg hover:bg-[#333333] dark:hover:bg-slate-700 transition ${isAnalyticsOpen ? 'text-purple-400' : ''}`}
+          >
+            <BsBarChartFill size={20} />
+            <span className="text-[10px] sm:text-[11px] font-medium font-sans">Speakers</span>
+          </button>
+
+          <div className="w-px h-8 bg-slate-600 mx-1" />
 
           {/* Reactions */}
           <div className="relative">

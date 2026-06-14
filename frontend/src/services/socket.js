@@ -270,6 +270,68 @@ export const onWhiteboardUpdate = (callback) => {
   s.on('whiteboard-update', callback);
 };
 
+// ─────────────────────────────────────────────
+// LIVE CAPTIONS (Real-Time Transcription)
+// ─────────────────────────────────────────────
+
+/**
+ * Enable captions for this socket's room
+ */
+export const startCaptions = (roomId, language = 'en') => {
+  const s = getSocket();
+  s.emit('caption-start', { roomId, language });
+};
+
+/**
+ * Disable captions
+ */
+export const stopCaptions = (roomId) => {
+  const s = getSocket();
+  s.emit('caption-stop', { roomId });
+};
+
+/**
+ * Send audio chunk for server-side Whisper transcription
+ */
+export const sendCaptionChunk = (roomId, audioBase64, language = 'en') => {
+  const s = getSocket();
+  s.emit('caption-chunk', { roomId, audioData: audioBase64, language });
+};
+
+/**
+ * Send client-side speech recognition result (browser Web Speech API)
+ */
+export const sendLiveCaption = (roomId, text, isFinal, speakerId, speakerName) => {
+  const s = getSocket();
+  s.emit('live-caption', { roomId, text, isFinal, speakerId, speakerName });
+};
+
+/**
+ * Listen for caption updates (interim + final)
+ */
+export const onCaptionUpdate = (callback) => {
+  const s = getSocket();
+  s.on('caption-update', callback);
+};
+
+/**
+ * Listen for captions enabled/disabled events
+ */
+export const onCaptionsEnabled = (callback) => {
+  const s = getSocket();
+  s.on('captions-enabled', callback);
+};
+
+export const onCaptionsDisabled = (callback) => {
+  const s = getSocket();
+  s.on('captions-disabled', callback);
+};
+
+export const onCaptionError = (callback) => {
+  const s = getSocket();
+  s.on('caption-error', callback);
+};
+
 const socketService = {
   initializeSocket,
   getSocket,
@@ -303,7 +365,15 @@ const socketService = {
   onRecordingStarted,
   onRecordingStopped,
   endMeeting,
-  onMeetingEnded
+  onMeetingEnded,
+  startCaptions,
+  stopCaptions,
+  sendCaptionChunk,
+  sendLiveCaption,
+  onCaptionUpdate,
+  onCaptionsEnabled,
+  onCaptionsDisabled,
+  onCaptionError
 };
 
 export default socketService;

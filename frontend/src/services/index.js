@@ -223,3 +223,136 @@ export const messageService = {
     }
   }
 };
+
+/**
+ * AI Service - Live Captions, Summaries, Action Items, Speaker Analytics
+ */
+
+export const aiService = {
+  // Check if AI features are enabled
+  getStatus: async () => {
+    try {
+      const response = await apiClient.get('/ai/status');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Upload audio for transcription (REST fallback)
+  transcribeAudio: async (audioBlob, roomId, language = 'en') => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'audio.webm');
+      formData.append('roomId', roomId);
+      formData.append('language', language);
+      const response = await apiClient.post('/ai/transcribe', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get all transcriptions for a room
+  getTranscriptions: async (roomId, page = 1, limit = 50) => {
+    try {
+      const response = await apiClient.get(`/ai/transcriptions/${roomId}`, { params: { page, limit } });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get full combined transcript
+  getFullTranscript: async (roomId) => {
+    try {
+      const response = await apiClient.get(`/ai/transcriptions/${roomId}/full`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Generate meeting summary from transcriptions
+  generateSummary: async (roomId, language = 'en') => {
+    try {
+      const response = await apiClient.post('/ai/summary', { roomId, language });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get all summaries for a room
+  getSummaries: async (roomId) => {
+    try {
+      const response = await apiClient.get(`/ai/summary/${roomId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Extract action items from transcriptions
+  extractActionItems: async (roomId) => {
+    try {
+      const response = await apiClient.post('/ai/action-items', { roomId });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get action items for a room
+  getActionItems: async (roomId, status = null) => {
+    try {
+      const params = status ? { status } : {};
+      const response = await apiClient.get(`/ai/action-items/${roomId}`, { params });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Update action item status
+  updateActionItem: async (id, updates) => {
+    try {
+      const response = await apiClient.patch(`/ai/action-items/${id}`, updates);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Delete action item
+  deleteActionItem: async (id) => {
+    try {
+      const response = await apiClient.delete(`/ai/action-items/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Generate speaker analytics
+  generateSpeakerAnalytics: async (roomId) => {
+    try {
+      const response = await apiClient.post('/ai/speaker-analytics', { roomId });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get speaker analytics for a room
+  getSpeakerAnalytics: async (roomId) => {
+    try {
+      const response = await apiClient.get(`/ai/speaker-analytics/${roomId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  }
+};
