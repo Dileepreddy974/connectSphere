@@ -1,7 +1,7 @@
 services:
   # MongoDB Database
   mongodb:
-    image: mongo:6.0-alpine
+    image: mongo:6.0
     container_name: connectsphere-mongodb
     ports:
       - "27017:27017"

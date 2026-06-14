@@ -1,6 +1,7 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth.js';
-import { body, handleValidationErrors } from 'express-validator';
+import { body } from 'express-validator';
+import { handleValidationErrors } from '../middleware/validation.js';
 import {
   sendInvitation,
   getInvitations,
