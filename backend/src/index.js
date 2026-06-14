@@ -6,6 +6,7 @@ import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
 import { createServer } from "http";
+import { initSocket } from "./socket.js";
 
 // Routes
 import authRoutes from "./routes/auth.js";
@@ -18,6 +19,7 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app);
+const io = initSocket(server);
 
 // Middleware
 app.use(helmet());
