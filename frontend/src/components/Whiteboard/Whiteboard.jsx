@@ -54,8 +54,8 @@ const Whiteboard = ({ roomId }) => {
 
   const startDrawing = (event) => {
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = (event.clientX || event.touches?.[0]?.clientX) - rect.left;
-    const y = (event.clientY || event.touches?.[0]?.clientY) - rect.top;
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
     contextRef.current.beginPath();
     contextRef.current.moveTo(x, y);
     setIsDrawing(true);
@@ -72,8 +72,8 @@ const Whiteboard = ({ roomId }) => {
   const draw = (event) => {
     if (!isDrawing) return;
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = (event.clientX || event.touches?.[0]?.clientX) - rect.left;
-    const y = (event.clientY || event.touches?.[0]?.clientY) - rect.top;
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
     contextRef.current.lineTo(x, y);
     contextRef.current.stroke();
 
@@ -160,16 +160,11 @@ const Whiteboard = ({ roomId }) => {
       <canvas
         ref={canvasRef}
         className="flex-1 cursor-crosshair touch-none"
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onTouchStart={startDrawing}
-        onTouchMove={draw}
-        onTouchEnd={stopDrawing}
         onPointerDown={startDrawing}
         onPointerMove={draw}
         onPointerUp={stopDrawing}
+        onPointerOut={stopDrawing}
+        onPointerCancel={stopDrawing}
       />
     </div>
   );

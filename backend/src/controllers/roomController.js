@@ -40,7 +40,11 @@ export const createRoom = async (req, res, next) => {
  */
 export const joinRoom = async (req, res, next) => {
   try {
-    const { roomId, password } = req.body;
+    let { roomId, password } = req.body;
+
+    if (roomId) {
+      roomId = roomId.toLowerCase();
+    }
 
     const room = await Room.findOne({ roomId, isActive: true });
 
@@ -97,7 +101,10 @@ export const joinRoom = async (req, res, next) => {
  */
 export const getRoomDetails = async (req, res, next) => {
   try {
-    const { roomId } = req.params;
+    let { roomId } = req.params;
+    if (roomId) {
+      roomId = roomId.toLowerCase();
+    }
     const room = await Room.findOne({ roomId })
       .populate('createdBy', 'name email')
       .populate('participants.userId', 'name email');
@@ -153,7 +160,10 @@ export const getUserRooms = async (req, res, next) => {
  */
 export const leaveRoom = async (req, res, next) => {
   try {
-    const { roomId } = req.params;
+    let { roomId } = req.params;
+    if (roomId) {
+      roomId = roomId.toLowerCase();
+    }
     const room = await Room.findOne({ roomId });
 
     if (!room) {

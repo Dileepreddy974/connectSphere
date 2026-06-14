@@ -152,6 +152,10 @@ const useWebRTC = (roomId, userId) => {
   const toggleScreenShare = useCallback(async () => {
     if (!isScreenSharing) {
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+          alert('Screen sharing is not supported on this device/browser (or requires HTTPS).');
+          return;
+        }
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
         screenStreamRef.current = stream;
         setIsScreenSharing(true);
