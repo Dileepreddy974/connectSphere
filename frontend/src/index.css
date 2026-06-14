@@ -24,6 +24,11 @@ body {
   border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
 }
 
+/* Dark mode doodle border */
+.dark .doodle-border {
+  border-color: #475569;
+}
+
 /* Doodle Button Effect */
 .doodle-button,
 button,
@@ -46,9 +51,18 @@ input[type="button"] {
   box-shadow: 2px 2px 0px 0px #1e293b;
 }
 
+.dark .doodle-button {
+  border-color: #475569 !important;
+  box-shadow: 2px 2px 0px 0px #475569;
+}
+
 .doodle-button:hover {
   transform: rotate(-1.5deg) scale(1.05);
   box-shadow: 5px 5px 0px 0px #1e293b;
+}
+
+.dark .doodle-button:hover {
+  box-shadow: 5px 5px 0px 0px #6366f1;
 }
 
 .doodle-button:active {
@@ -62,6 +76,12 @@ input[type="button"] {
   border: 2px solid #1e293b;
   border-radius: 15px 225px 15px 255px/225px 15px 255px 15px;
   box-shadow: 4px 4px 0px 0px #1e293b;
+}
+
+.dark .doodle-card {
+  background: #1e293b;
+  border-color: #475569;
+  box-shadow: 4px 4px 0px 0px #334155;
 }
 
 /* Doodle Animations */
@@ -104,10 +124,19 @@ input[type="button"] {
   background: #fffaf0;
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
   border: 1px solid #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-color: #475569;
 }
 
 /* Navigation Overrides */
@@ -128,4 +157,15 @@ input[type="button"] {
 @keyframes profileSlideUp {
   from { opacity: 0; transform: translateY(30px) rotate(-1deg); }
   to { opacity: 1; transform: translateY(0) rotate(0deg); }
+}
+
+/* Reaction float animation */
+@keyframes reactionFloat {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-120px) scale(1.5); }
+}
+
+.reaction-float {
+  animation: reactionFloat 2.5s ease-out forwards;
+  pointer-events: none;
 }

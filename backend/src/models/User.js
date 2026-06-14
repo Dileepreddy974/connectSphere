@@ -42,6 +42,22 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  preferences: {
+    theme: {
+      type: String,
+      enum: ['light', 'dark'],
+      default: 'light'
+    },
+    notifications: {
+      email: { type: Boolean, default: true },
+      push: { type: Boolean, default: true },
+      meetingInvites: { type: Boolean, default: true }
+    },
+    language: {
+      type: String,
+      default: 'en'
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now

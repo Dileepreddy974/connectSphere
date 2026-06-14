@@ -117,6 +117,107 @@ export const shareScreen = (roomId, screenStream) => {
 };
 
 /**
+ * Raise/lower hand
+ */
+export const raiseHand = (roomId, userId, name, raised) => {
+  const s = getSocket();
+  s.emit('raise-hand', { roomId, userId, name, raised });
+};
+
+export const onHandRaised = (callback) => {
+  const s = getSocket();
+  s.on('hand-raised', callback);
+};
+
+/**
+ * Send a reaction emoji
+ */
+export const sendReaction = (roomId, userId, name, emoji) => {
+  const s = getSocket();
+  s.emit('reaction', { roomId, userId, name, emoji });
+};
+
+export const onReactionReceived = (callback) => {
+  const s = getSocket();
+  s.on('reaction-received', callback);
+};
+
+/**
+ * Typing indicators
+ */
+export const startTyping = (roomId, userId, name) => {
+  const s = getSocket();
+  s.emit('typing-start', { roomId, userId, name });
+};
+
+export const stopTyping = (roomId, userId) => {
+  const s = getSocket();
+  s.emit('typing-stop', { roomId, userId });
+};
+
+export const onUserTyping = (callback) => {
+  const s = getSocket();
+  s.on('user-typing', callback);
+};
+
+/**
+ * Online users list
+ */
+export const onOnlineUsers = (callback) => {
+  const s = getSocket();
+  s.on('online-users', callback);
+};
+
+/**
+ * Mute user (host control)
+ */
+export const muteUser = (roomId, targetSocketId, mutedBy) => {
+  const s = getSocket();
+  s.emit('mute-user', { roomId, targetSocketId, mutedBy });
+};
+
+export const onForceMute = (callback) => {
+  const s = getSocket();
+  s.on('force-mute', callback);
+};
+
+/**
+ * Recording events
+ */
+export const startRecording = (roomId, userId) => {
+  const s = getSocket();
+  s.emit('recording-start', { roomId, userId });
+};
+
+export const stopRecording = (roomId, userId) => {
+  const s = getSocket();
+  s.emit('recording-stop', { roomId, userId });
+};
+
+export const onRecordingStarted = (callback) => {
+  const s = getSocket();
+  s.on('recording-started', callback);
+};
+
+export const onRecordingStopped = (callback) => {
+  const s = getSocket();
+  s.on('recording-stopped', callback);
+};
+
+/**
+ * Meeting ended
+ */
+export const endMeeting = (roomId, endedBy) => {
+  const s = getSocket();
+  s.emit('meeting-ended', { roomId, endedBy });
+};
+
+export const onMeetingEnded = (callback) => {
+  const s = getSocket();
+  s.on('meeting-ended', callback);
+};
+
+/**
  * Emit whiteboard update
  */
 export const updateWhiteboard = (roomId, drawingData) => {
@@ -186,7 +287,23 @@ const socketService = {
   emitIceCandidate,
   onOffer,
   onAnswer,
-  onIceCandidate
+  onIceCandidate,
+  raiseHand,
+  onHandRaised,
+  sendReaction,
+  onReactionReceived,
+  startTyping,
+  stopTyping,
+  onUserTyping,
+  onOnlineUsers,
+  muteUser,
+  onForceMute,
+  startRecording,
+  stopRecording,
+  onRecordingStarted,
+  onRecordingStopped,
+  endMeeting,
+  onMeetingEnded
 };
 
 export default socketService;
