@@ -12,9 +12,8 @@ import Whiteboard from '../components/Whiteboard/Whiteboard';
 import FilePanel from '../components/Meeting/FilePanel';
 import { MeetingRoomSkeleton } from '../components/SkeletonLoaders.jsx';
 import { SlideRight } from '../components/PageTransition.jsx';
-import { BsMicFill, BsMicMuteFill, BsCameraVideoFill, BsCameraVideoOffFill, BsChatDots, BsFolder, BsPen, BsHandIndexFill } from 'react-icons/bs';
+import { BsMicFill, BsMicMuteFill, BsCameraVideoFill, BsCameraVideoOffFill, BsChatDots, BsFolder, BsPen, BsHandIndexFill, BsPeople, BsTranslate, BsFileText, BsCheckSquare, BsBarChartFill } from 'react-icons/bs';
 import { MdScreenShare, MdStopScreenShare } from 'react-icons/md';
-import { BsTranslate, BsFileText, BsCheckSquare, BsBarChartFill } from 'react-icons/bs';
 import LiveCaptions from '../components/AI/LiveCaptions';
 import MeetingSummaryPanel from '../components/AI/MeetingSummaryPanel';
 import ActionItemsPanel from '../components/AI/ActionItemsPanel';
@@ -76,6 +75,7 @@ const MeetingRoom = () => {
   const [showReactions, setShowReactions] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState([]);
   const [onlineUserIds, setOnlineUserIds] = useState([]);
+  const [showParticipants, setShowParticipants] = useState(false);
   const [isCaptionsOpen, setIsCaptionsOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
@@ -112,7 +112,10 @@ const MeetingRoom = () => {
     });
   }, [navigate]);
 
-  const { localStream, remoteStreams, toggleVideo, toggleAudio, isScreenSharing, toggleScreenShare } = useWebRTC(roomId, user?._id);
+  const { localStream, remoteStreams, participants, toggleVideo, toggleAudio, isScreenSharing, toggleScreenShare } = useWebRTC(roomId, user?._id);
+
+  // Total participant count: online users from socket + local user
+  const participantCounts = onlineUserIds.length > 0 ? onlineUserIds.length : Object.keys(remoteStreams).length + 1;
 
   useEffect(() => {
     const fetchRoomDetails = async () => {
@@ -237,9 +240,10 @@ const MeetingRoom = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-white dark:bg-slate-700 doodle-border dark:border-slate-500 px-4 py-1.5 text-sm font-bold shadow-sm dark:text-white">
+          <div className="hidden sm:flex items-center gap-2 bg-white dark:bg-slate-700 doodle-border dark:border-slate-500 px-4 py-1.5 text-sm font-bold shadow-sm dark:text-white cursor-pointer hover:bg-indigo-50 dark:hover:bg-slate-600 transition" onClick={() => setShowParticipants(!showParticipants)}>
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            {onlineUserIds.length || Object.keys(remoteStreams).length + 1} doodlers
+            <BsPeople size={14} />
+            {participantCounts} {participantCounts === 1 ? 'doodler' : 'doodlers'}
           </div>
           <button 
             onClick={handleLeaveRoom}
@@ -259,7 +263,12 @@ const MeetingRoom = () => {
                <Whiteboard roomId={roomId} />
             </div>
           ) : (
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 overflow-y-auto content-start custom-scrollbar p-2">
+            <div className={`flex-1 grid gap-3 sm:gap-6 overflow-y-auto content-start custom-scrollbar p-2 ${
+              Object.keys(remoteStreams).length === 0 ? 'grid-cols-1' :
+              Object.keys(remoteStreams).length <= 1 ? 'grid-cols-1 sm:grid-cols-2' :
+              Object.keys(remoteStreams).length <= 3 ? 'grid-cols-1 sm:grid-cols-2' :
+              'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+            }`}>
               {/* Local Video */}
               <div className="doodle-card dark:bg-slate-800 dark:border-slate-600 overflow-hidden bg-white hover:rotate-1 transition-transform group relative aspect-video">
                 <VideoBox 
@@ -270,15 +279,19 @@ const MeetingRoom = () => {
               </div>
 
               {/* Remote Videos */}
-              {Object.entries(remoteStreams).map(([socketId, stream]) => (
-                <div key={socketId} className="doodle-card dark:bg-slate-800 dark:border-slate-600 overflow-hidden bg-white hover:-rotate-1 transition-transform group relative aspect-video">
-                  <VideoBox 
-                    stream={stream}
-                    name={`Doodler ${socketId.substring(0, 4)}`}
-                    isSelf={false}
-                  />
-                </div>
-              ))}
+              {Object.entries(remoteStreams).map(([socketId, stream]) => {
+                const participant = participants[socketId];
+                const displayName = participant?.name || `Doodler ${socketId.substring(0, 4)}`;
+                return (
+                  <div key={socketId} className="doodle-card dark:bg-slate-800 dark:border-slate-600 overflow-hidden bg-white hover:-rotate-1 transition-transform group relative aspect-video">
+                    <VideoBox 
+                      stream={stream}
+                      name={displayName}
+                      isSelf={false}
+                    />
+                  </div>
+                );
+              })}
 
               {/* No one else yet */}
               {Object.keys(remoteStreams).length === 0 && (
@@ -363,6 +376,55 @@ const MeetingRoom = () => {
             {r.emoji}
           </motion.div>
         ))}
+      </AnimatePresence>
+
+      {/* Participants Dropdown */}
+      <AnimatePresence>
+        {showParticipants && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed top-16 right-4 sm:right-6 z-50 w-72 bg-white dark:bg-slate-800 doodle-border dark:border-slate-600 shadow-2xl p-4"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-patrick text-lg font-bold dark:text-white flex items-center gap-2">
+                <BsPeople className="text-indigo-500" size={16} />
+                Participants ({participantCounts})
+              </h3>
+              <button onClick={() => setShowParticipants(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">x</button>
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+              {/* Self */}
+              <div className="flex items-center gap-3 p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center text-white text-sm font-bold font-sans">
+                  {user?.name?.charAt(0)?.toUpperCase() || 'Y'}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold font-sans text-slate-800 dark:text-white">{user?.name || 'You'}</p>
+                  <p className="text-[10px] text-slate-400 font-sans">You (Host)</p>
+                </div>
+                <span className="w-2 h-2 bg-green-500 rounded-full" />
+              </div>
+              {/* Remote participants */}
+              {Object.entries(participants).map(([socketId, p]) => (
+                <div key={socketId} className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+                  <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-bold font-sans">
+                    {p.name?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold font-sans text-slate-800 dark:text-white">{p.name}</p>
+                    <p className="text-[10px] text-slate-400 font-sans">Connected</p>
+                  </div>
+                  <span className="w-2 h-2 bg-green-500 rounded-full" />
+                </div>
+              ))}
+              {Object.keys(participants).length === 0 && (
+                <p className="text-xs text-slate-400 font-sans text-center py-2">Waiting for others to join...</p>
+              )}
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Control Bar */}

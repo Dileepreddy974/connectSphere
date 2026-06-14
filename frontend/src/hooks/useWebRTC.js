@@ -10,27 +10,41 @@ const iceServers = {
 
 const useWebRTC = (roomId, userId) => {
   const [localStream, setLocalStream] = useState(null);
-  const [remoteStreams, setRemoteStreams] = useState({}); // { socketId: stream }
+  const [remoteStreams, setRemoteStreams] = useState({}); // { socketId: MediaStream }
+  const [participants, setParticipants] = useState({}); // { socketId: { userId, name } }
   const peerConnections = useRef({}); // { socketId: RTCPeerConnection }
   const localStreamRef = useRef(null);
   const pendingCandidates = useRef({}); // { socketId: RTCIceCandidate[] }
+  const remoteStreamsRef = useRef({}); // Mutable ref to accumulate tracks
 
   const createPeerConnection = useCallback((targetSocketId) => {
     if (peerConnections.current[targetSocketId]) return peerConnections.current[targetSocketId];
 
     const pc = new RTCPeerConnection(iceServers);
 
-    // Track state
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         socketService.emitIceCandidate(roomId, event.candidate, targetSocketId);
       }
     };
 
+    // Initialize a stream for this peer
+    remoteStreamsRef.current[targetSocketId] = new MediaStream();
+
     pc.ontrack = (event) => {
-      setRemoteStreams((prev) => ({
+      // Add each incoming track to the peer's accumulated stream
+      const stream = remoteStreamsRef.current[targetSocketId];
+      if (stream) {
+        event.streams[0].getTracks().forEach(track => {
+          if (!stream.getTracks().find(t => t.id === track.id)) {
+            stream.addTrack(track);
+          }
+        });
+      }
+      // Trigger React re-render with a new stream reference
+      setRemoteStreams(prev => ({
         ...prev,
-        [targetSocketId]: new MediaStream(event.streams[0].getTracks())
+        [targetSocketId]: new MediaStream(remoteStreamsRef.current[targetSocketId]?.getTracks() || [])
       }));
     };
 
@@ -58,8 +72,9 @@ const useWebRTC = (roomId, userId) => {
         const socket = socketService.getSocket();
 
         // 1. Listen for new users
-        socket.on('user-connected', async ({ socketId }) => {
+        socket.on('user-connected', async ({ socketId, userId: remoteUserId }) => {
           console.log('User connected, creating offer to:', socketId);
+          setParticipants(prev => ({ ...prev, [socketId]: { userId: remoteUserId, name: `Doodler ${socketId.substring(0, 4)}` } }));
           const pc = createPeerConnection(socketId);
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
@@ -120,7 +135,13 @@ const useWebRTC = (roomId, userId) => {
             peerConnections.current[socketId].close();
             delete peerConnections.current[socketId];
           }
+          delete remoteStreamsRef.current[socketId];
           setRemoteStreams((prev) => {
+            const newState = { ...prev };
+            delete newState[socketId];
+            return newState;
+          });
+          setParticipants(prev => {
             const newState = { ...prev };
             delete newState[socketId];
             return newState;
@@ -146,6 +167,7 @@ const useWebRTC = (roomId, userId) => {
       }
       Object.values(peerConnections.current).forEach(pc => pc.close());
       peerConnections.current = {};
+      remoteStreamsRef.current = {};
     };
   }, [roomId, userId, createPeerConnection]);
 
@@ -224,6 +246,7 @@ const useWebRTC = (roomId, userId) => {
   return {
     localStream,
     remoteStreams,
+    participants,
     isScreenSharing,
     toggleVideo,
     toggleAudio,
