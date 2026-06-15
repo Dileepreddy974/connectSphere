@@ -6,8 +6,8 @@ import Transcription from './models/Transcription.js';
 import { transcribeChunk, isAIEnabled } from './services/openaiService.js';
 import logger from './utils/winstonLogger.js';
 
-// Track online users per room
-const onlineUsers = new Map(); // roomId -> Map(userId -> socketId)
+// Track online users per room: roomId -> Map(userId -> { socketId, userName })
+const onlineUsers = new Map();
 
 export const initSocket = (server) => {
   const io = new Server(server, {
@@ -24,22 +24,27 @@ export const initSocket = (server) => {
     logger.info(`Socket connected: ${socket.id}`);
 
     // ─── Join Room ───
-    socket.on('join-room', async (roomId, userId) => {
+    socket.on('join-room', async (roomId, userId, userName) => {
       socket.join(roomId);
       socket.data.roomId = roomId;
       socket.data.userId = userId;
+      socket.data.userName = userName || null;
 
-      // Track online user
+      // Track online user with name
       if (!onlineUsers.has(roomId)) onlineUsers.set(roomId, new Map());
-      onlineUsers.get(roomId).set(userId, socket.id);
+      onlineUsers.get(roomId).set(userId, { socketId: socket.id, userName: userName || null });
 
-      logger.info(`User ${userId} joined room ${roomId}`, { event: 'meeting.join', socketId: socket.id });
+      logger.info(`User ${userId} (${userName}) joined room ${roomId}`, { event: 'meeting.join', socketId: socket.id });
 
-      // Tell others in the room
-      socket.to(roomId).emit('user-connected', { socketId: socket.id, userId });
+      // Tell others in the room about this new user
+      socket.to(roomId).emit('user-connected', { socketId: socket.id, userId, userName: userName || null });
 
-      // Broadcast updated online users list
-      io.to(roomId).emit('online-users', Array.from(onlineUsers.get(roomId).keys()));
+      // Broadcast updated online users list (array of { userId, userName })
+      const roomUsers = Array.from(onlineUsers.get(roomId).entries()).map(([uid, info]) => ({
+        userId: uid,
+        userName: info.userName
+      }));
+      io.to(roomId).emit('online-users', roomUsers);
 
       // Record attendance
       try {
@@ -64,7 +69,17 @@ export const initSocket = (server) => {
         }
 
         socket.to(roomId).emit('user-disconnected', socket.id);
-        io.to(roomId).emit('online-users', roomMap ? Array.from(roomMap.keys()) : []);
+
+        // Broadcast updated list
+        if (roomMap && roomMap.size > 0) {
+          const updatedUsers = Array.from(roomMap.entries()).map(([uid, info]) => ({
+            userId: uid,
+            userName: info.userName
+          }));
+          io.to(roomId).emit('online-users', updatedUsers);
+        } else {
+          io.to(roomId).emit('online-users', []);
+        }
 
         // Update attendance leave time
         try {

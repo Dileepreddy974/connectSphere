@@ -74,7 +74,7 @@ const MeetingRoom = () => {
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState([]);
-  const [onlineUserIds, setOnlineUserIds] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const [showParticipants, setShowParticipants] = useState(false);
   const [isCaptionsOpen, setIsCaptionsOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -103,8 +103,8 @@ const MeetingRoom = () => {
       }, 3000);
     });
 
-    onOnlineUsers((userIds) => {
-      setOnlineUserIds(userIds);
+    onOnlineUsers((users) => {
+      setOnlineUsers(Array.isArray(users) ? users : []);
     });
 
     onMeetingEnded((data) => {
@@ -112,10 +112,10 @@ const MeetingRoom = () => {
     });
   }, [navigate]);
 
-  const { localStream, remoteStreams, participants, toggleVideo, toggleAudio, isScreenSharing, toggleScreenShare } = useWebRTC(roomId, user?._id);
+  const { localStream, remoteStreams, participants, toggleVideo, toggleAudio, isScreenSharing, toggleScreenShare } = useWebRTC(roomId, user?._id, user?.name);
 
-  // Total participant count: online users from socket + local user
-  const participantCounts = onlineUserIds.length > 0 ? onlineUserIds.length : Object.keys(remoteStreams).length + 1;
+  // Total participant count from the online-users list (includes self)
+  const participantCounts = onlineUsers.length > 0 ? onlineUsers.length : Object.keys(remoteStreams).length + 1;
 
   useEffect(() => {
     const fetchRoomDetails = async () => {
@@ -412,31 +412,61 @@ const MeetingRoom = () => {
               <button onClick={() => setShowParticipants(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">x</button>
             </div>
             <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-              {/* Self */}
-              <div className="flex items-center gap-3 p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-100 dark:border-indigo-800">
-                <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center text-white text-sm font-bold font-sans">
-                  {user?.name?.charAt(0)?.toUpperCase() || 'Y'}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold font-sans text-slate-800 dark:text-white">{user?.name || 'You'}</p>
-                  <p className="text-[10px] text-slate-400 font-sans">You (Host)</p>
-                </div>
-                <span className="w-2 h-2 bg-green-500 rounded-full" />
-              </div>
-              {/* Remote participants */}
-              {Object.entries(participants).map(([socketId, p]) => (
-                <div key={socketId} className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
-                  <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-bold font-sans">
-                    {p.name?.charAt(0)?.toUpperCase() || '?'}
+              {/* All online participants from socket (includes self) */}
+              {onlineUsers.length > 0 ? (
+                onlineUsers.map((u) => {
+                  const isSelf = u.userId === user?._id;
+                  const displayName = isSelf ? (user?.name || 'You') : (u.userName || `Doodler`);
+                  const initial = displayName.charAt(0).toUpperCase();
+                  return (
+                    <div key={u.userId} className={`flex items-center gap-3 p-2 rounded-lg border ${
+                      isSelf 
+                        ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-100 dark:border-indigo-800' 
+                        : 'bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600'
+                    }`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold font-sans ${
+                        isSelf ? 'bg-indigo-500' : 'bg-emerald-500'
+                      }`}>
+                        {initial}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold font-sans text-slate-800 dark:text-white">{displayName}</p>
+                        <p className="text-[10px] text-slate-400 font-sans">
+                          {isSelf ? 'You (Host)' : 'Connected'}
+                        </p>
+                      </div>
+                      <span className="w-2 h-2 bg-green-500 rounded-full" />
+                    </div>
+                  );
+                })
+              ) : (
+                /* Fallback: show self + remoteStreams participants */
+                <>
+                  <div className="flex items-center gap-3 p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                    <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center text-white text-sm font-bold font-sans">
+                      {user?.name?.charAt(0)?.toUpperCase() || 'Y'}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold font-sans text-slate-800 dark:text-white">{user?.name || 'You'}</p>
+                      <p className="text-[10px] text-slate-400 font-sans">You (Host)</p>
+                    </div>
+                    <span className="w-2 h-2 bg-green-500 rounded-full" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold font-sans text-slate-800 dark:text-white">{p.name}</p>
-                    <p className="text-[10px] text-slate-400 font-sans">Connected</p>
-                  </div>
-                  <span className="w-2 h-2 bg-green-500 rounded-full" />
-                </div>
-              ))}
-              {Object.keys(participants).length === 0 && (
+                  {Object.entries(participants).map(([socketId, p]) => (
+                    <div key={socketId} className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-bold font-sans">
+                        {p.name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold font-sans text-slate-800 dark:text-white">{p.name}</p>
+                        <p className="text-[10px] text-slate-400 font-sans">Connected</p>
+                      </div>
+                      <span className="w-2 h-2 bg-green-500 rounded-full" />
+                    </div>
+                  ))}
+                </>
+              )}
+              {onlineUsers.length === 0 && Object.keys(participants).length === 0 && (
                 <p className="text-xs text-slate-400 font-sans text-center py-2">Waiting for others to join...</p>
               )}
             </div>

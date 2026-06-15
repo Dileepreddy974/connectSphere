@@ -8,14 +8,29 @@ const iceServers = {
   ]
 };
 
-const useWebRTC = (roomId, userId) => {
+/**
+ * Wait for the socket to be connected (with timeout).
+ */
+const waitForSocketConnect = (socket, timeoutMs = 8000) => {
+  return new Promise((resolve, reject) => {
+    if (socket.connected) return resolve();
+    const timer = setTimeout(() => reject(new Error('Socket connect timeout')), timeoutMs);
+    socket.once('connect', () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+};
+
+const useWebRTC = (roomId, userId, userName) => {
   const [localStream, setLocalStream] = useState(null);
-  const [remoteStreams, setRemoteStreams] = useState({}); // { socketId: MediaStream }
-  const [participants, setParticipants] = useState({}); // { socketId: { userId, name } }
-  const peerConnections = useRef({}); // { socketId: RTCPeerConnection }
+  const [remoteStreams, setRemoteStreams] = useState({});
+  const [participants, setParticipants] = useState({});
+  const peerConnections = useRef({});
   const localStreamRef = useRef(null);
-  const pendingCandidates = useRef({}); // { socketId: RTCIceCandidate[] }
-  const remoteStreamsRef = useRef({}); // Mutable ref to accumulate tracks
+  const pendingCandidates = useRef({});
+  const remoteStreamsRef = useRef({});
+  const listenersRegistered = useRef(false);
 
   const createPeerConnection = useCallback((targetSocketId) => {
     if (peerConnections.current[targetSocketId]) return peerConnections.current[targetSocketId];
@@ -28,11 +43,9 @@ const useWebRTC = (roomId, userId) => {
       }
     };
 
-    // Initialize a stream for this peer
     remoteStreamsRef.current[targetSocketId] = new MediaStream();
 
     pc.ontrack = (event) => {
-      // Add each incoming track to the peer's accumulated stream
       const stream = remoteStreamsRef.current[targetSocketId];
       if (stream) {
         event.streams[0].getTracks().forEach(track => {
@@ -41,14 +54,12 @@ const useWebRTC = (roomId, userId) => {
           }
         });
       }
-      // Trigger React re-render with a new stream reference
       setRemoteStreams(prev => ({
         ...prev,
         [targetSocketId]: new MediaStream(remoteStreamsRef.current[targetSocketId]?.getTracks() || [])
       }));
     };
 
-    // Add local tracks to the connection
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
         pc.addTrack(track, localStreamRef.current);
@@ -60,33 +71,51 @@ const useWebRTC = (roomId, userId) => {
   }, [roomId]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const init = async () => {
       try {
+        // 1. Get user media
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: true
         });
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
         setLocalStream(stream);
         localStreamRef.current = stream;
 
+        // 2. Wait for socket to be connected
         const socket = socketService.getSocket();
+        await waitForSocketConnect(socket);
+        if (cancelled) return;
 
-        // 1. Listen for new users
-        socket.on('user-connected', async ({ socketId, userId: remoteUserId }) => {
-          console.log('User connected, creating offer to:', socketId);
-          setParticipants(prev => ({ ...prev, [socketId]: { userId: remoteUserId, name: `Doodler ${socketId.substring(0, 4)}` } }));
+        // 3. Remove any stale listeners from previous runs
+        if (listenersRegistered.current) {
+          socket.off('user-connected');
+          socket.off('webrtc-offer');
+          socket.off('webrtc-answer');
+          socket.off('webrtc-ice-candidate');
+          socket.off('user-disconnected');
+        }
+
+        // 4. Register WebRTC signaling listeners
+        socket.on('user-connected', async ({ socketId, userId: remoteUserId, userName: remoteName }) => {
+          console.log('[WebRTC] User connected:', socketId, remoteName);
+          setParticipants(prev => ({
+            ...prev,
+            [socketId]: { userId: remoteUserId, name: remoteName || `Doodler ${socketId.substring(0, 4)}` }
+          }));
           const pc = createPeerConnection(socketId);
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
           socketService.emitOffer(roomId, offer, socketId);
         });
 
-        // 2. Listen for offers
         socket.on('webrtc-offer', async ({ offer, senderSocketId }) => {
-          console.log('Received offer from:', senderSocketId);
+          console.log('[WebRTC] Received offer from:', senderSocketId);
           const pc = createPeerConnection(senderSocketId);
           await pc.setRemoteDescription(new RTCSessionDescription(offer));
-          
+
           if (pendingCandidates.current[senderSocketId]) {
             for (const c of pendingCandidates.current[senderSocketId]) {
               try { await pc.addIceCandidate(c); } catch(e) {}
@@ -99,9 +128,8 @@ const useWebRTC = (roomId, userId) => {
           socketService.emitAnswer(roomId, answer, senderSocketId);
         });
 
-        // 3. Listen for answers
         socket.on('webrtc-answer', async ({ answer, senderSocketId }) => {
-          console.log('Received answer from:', senderSocketId);
+          console.log('[WebRTC] Received answer from:', senderSocketId);
           const pc = peerConnections.current[senderSocketId];
           if (pc) {
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
@@ -114,9 +142,7 @@ const useWebRTC = (roomId, userId) => {
           }
         });
 
-        // 4. Listen for ICE candidates
         socket.on('webrtc-ice-candidate', async ({ candidate, senderSocketId }) => {
-          console.log('Received ICE candidate from:', senderSocketId);
           const pc = peerConnections.current[senderSocketId];
           if (pc && pc.remoteDescription) {
             try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {}
@@ -128,9 +154,8 @@ const useWebRTC = (roomId, userId) => {
           }
         });
 
-        // 5. Listen for disconnections
         socket.on('user-disconnected', (socketId) => {
-          console.log('User disconnected:', socketId);
+          console.log('[WebRTC] User disconnected:', socketId);
           if (peerConnections.current[socketId]) {
             peerConnections.current[socketId].close();
             delete peerConnections.current[socketId];
@@ -148,8 +173,11 @@ const useWebRTC = (roomId, userId) => {
           });
         });
 
-        // Join the room after setting up listeners
-        socketService.joinRoom(roomId, userId);
+        listenersRegistered.current = true;
+
+        // 5. Join the socket room (triggers online-users + user-connected on backend)
+        socketService.joinRoom(roomId, userId, userName);
+        console.log('[WebRTC] Joined room:', roomId);
 
       } catch (err) {
         console.error('WebRTC initialization failed:', err);
@@ -161,15 +189,28 @@ const useWebRTC = (roomId, userId) => {
     }
 
     return () => {
-      // Cleanup
+      cancelled = true;
+      // Cleanup media
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(track => track.stop());
+        localStreamRef.current = null;
       }
+      // Cleanup peer connections
       Object.values(peerConnections.current).forEach(pc => pc.close());
       peerConnections.current = {};
       remoteStreamsRef.current = {};
+      // Cleanup socket listeners
+      try {
+        const socket = socketService.getSocket();
+        socket.off('user-connected');
+        socket.off('webrtc-offer');
+        socket.off('webrtc-answer');
+        socket.off('webrtc-ice-candidate');
+        socket.off('user-disconnected');
+        listenersRegistered.current = false;
+      } catch (e) {}
     };
-  }, [roomId, userId, createPeerConnection]);
+  }, [roomId, userId, userName, createPeerConnection]);
 
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const screenStreamRef = useRef(null);
