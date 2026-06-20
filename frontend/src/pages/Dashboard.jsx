@@ -7,6 +7,18 @@ import { ProfileModal } from '../components/ProfileModal.jsx';
 import { DashboardSkeleton } from '../components/SkeletonLoaders.jsx';
 import { StaggeredList, StaggeredItem } from '../components/PageTransition.jsx';
 
+const getAvatarUrl = (avatarStr) => {
+  if (!avatarStr) return null;
+  if (avatarStr.startsWith('http://') || avatarStr.startsWith('https://')) return avatarStr;
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  try {
+    const origin = new URL(apiUrl).origin;
+    return `${origin}${avatarStr}`;
+  } catch (_) {
+    return avatarStr;
+  }
+};
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -91,8 +103,15 @@ const Dashboard = () => {
             </button>
             <button
               onClick={() => setShowProfile(true)}
-              className="doodle-button bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 text-lg hover:bg-indigo-500 hover:text-white"
+              className="doodle-button bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 text-lg hover:bg-indigo-500 hover:text-white flex items-center gap-2"
             >
+              {getAvatarUrl(user?.avatar) ? (
+                <img src={getAvatarUrl(user.avatar)} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-indigo-300" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-bold font-sans">
+                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+              )}
               Profile
             </button>
             <button

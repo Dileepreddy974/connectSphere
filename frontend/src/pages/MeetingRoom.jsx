@@ -19,7 +19,19 @@ import MeetingSummaryPanel from '../components/AI/MeetingSummaryPanel';
 import ActionItemsPanel from '../components/AI/ActionItemsPanel';
 import SpeakerAnalytics from '../components/AI/SpeakerAnalytics';
 
-const REACTIONS = ['\uD83D\uDC4D', '\u2764\uFE0F', '\uD83C\uDF89', '\uD83D\uDC4F', '\uD83D\uDE02', '\uD83D\uDE2E'];
+const REACTIONS = ['👍', '❤️', '🎉', '👏', '😂', '😮'];
+
+const getAvatarUrl = (avatarStr) => {
+  if (!avatarStr) return null;
+  if (avatarStr.startsWith('http://') || avatarStr.startsWith('https://')) return avatarStr;
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  try {
+    const origin = new URL(apiUrl).origin;
+    return `${origin}${avatarStr}`;
+  } catch (_) {
+    return avatarStr;
+  }
+};
 
 const VideoBox = ({ stream, name, isSelf }) => {
   const videoRef = useRef(null);
@@ -280,7 +292,11 @@ const MeetingRoom = () => {
                   </div>
                   <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm doodle-border dark:border-slate-600 px-6 py-3 shadow-sm">
                     <div className="flex -space-x-2">
-                      <div className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold font-sans">{user?.name?.charAt(0)?.toUpperCase() || 'Y'}</div>
+                      {getAvatarUrl(user?.avatar) ? (
+                        <img src={getAvatarUrl(user.avatar)} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-white dark:border-slate-700" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold font-sans">{user?.name?.charAt(0)?.toUpperCase() || 'Y'}</div>
+                      )}
                     </div>
                     <span className="text-sm font-sans font-medium">Only you here — share the room link to invite others!</span>
                   </div>
@@ -424,10 +440,18 @@ const MeetingRoom = () => {
                         ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-100 dark:border-indigo-800' 
                         : 'bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600'
                     }`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold font-sans ${
-                        isSelf ? 'bg-indigo-500' : 'bg-emerald-500'
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center overflow-hidden shrink-0 ${
+                        isSelf ? 'ring-2 ring-indigo-400' : 'ring-2 ring-emerald-400'
                       }`}>
-                        {initial}
+                        {isSelf && getAvatarUrl(user?.avatar) ? (
+                          <img src={getAvatarUrl(user.avatar)} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center text-white text-sm font-bold font-sans ${
+                            isSelf ? 'bg-indigo-500' : 'bg-emerald-500'
+                          }`}>
+                            {initial}
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-bold font-sans text-slate-800 dark:text-white">{displayName}</p>
@@ -443,8 +467,14 @@ const MeetingRoom = () => {
                 /* Fallback: show self + remoteStreams participants */
                 <>
                   <div className="flex items-center gap-3 p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-100 dark:border-indigo-800">
-                    <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center text-white text-sm font-bold font-sans">
-                      {user?.name?.charAt(0)?.toUpperCase() || 'Y'}
+                    <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-indigo-400 shrink-0">
+                      {getAvatarUrl(user?.avatar) ? (
+                        <img src={getAvatarUrl(user.avatar)} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-indigo-500 flex items-center justify-center text-white text-sm font-bold font-sans">
+                          {user?.name?.charAt(0)?.toUpperCase() || 'Y'}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-bold font-sans text-slate-800 dark:text-white">{user?.name || 'You'}</p>

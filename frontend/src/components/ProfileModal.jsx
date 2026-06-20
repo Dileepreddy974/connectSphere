@@ -1,28 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const PRESET_SEEDS = [
-  { name: 'Felix', style: 'adventurer' },
-  { name: 'Princess', style: 'lorelei' },
-  { name: 'Gizmo', style: 'bottts' },
-  { name: 'Buster', style: 'adventurer' },
-  { name: 'Bubba', style: 'fun-emoji' },
-  { name: 'Sassy', style: 'lorelei' },
-  { name: 'Shadow', style: 'pixel-art' },
-  { name: 'Ziggy', style: 'fun-emoji' },
-  { name: 'Nova', style: 'adventurer' },
-  { name: 'Pixel', style: 'pixel-art' },
-];
-
-const AVATAR_STYLES = [
-  { value: 'fun-emoji', label: 'Fun Emoji', icon: '😜' },
-  { value: 'adventurer', label: 'Adventurer', icon: '🧭' },
-  { value: 'lorelei', label: 'Lorelei', icon: '✨' },
-  { value: 'bottts', label: 'Robots', icon: '🤖' },
-  { value: 'pixel-art', label: 'Pixel Art', icon: '👾' },
-];
-
-// Small decorative doodles rendered as SVG squiggles
 const SquiggleDecor = ({ className = '', color = '#6366f1' }) => (
   <svg className={className} viewBox="0 0 120 12" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
@@ -40,6 +18,19 @@ const StarDoodle = ({ className = '' }) => (
   </svg>
 );
 
+// Helper to compute full avatar URL from a stored path like "/uploads/file-xxx.png"
+const getAvatarUrl = (avatarStr) => {
+  if (!avatarStr) return null;
+  if (avatarStr.startsWith('http://') || avatarStr.startsWith('https://')) return avatarStr;
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  try {
+    const origin = new URL(apiUrl).origin;
+    return `${origin}${avatarStr}`;
+  } catch (_) {
+    return avatarStr;
+  }
+};
+
 export const ProfileModal = ({ onClose }) => {
   const { user, updateProfile, uploadAvatar } = useAuth();
   const fileInputRef = useRef(null);
@@ -47,17 +38,12 @@ export const ProfileModal = ({ onClose }) => {
   const [name, setName] = useState(user?.name || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [avatar, setAvatar] = useState(user?.avatar || '');
-  const [customSeed, setCustomSeed] = useState('');
-  const [customStyle, setCustomStyle] = useState('fun-emoji');
-  const [activeTab, setActiveTab] = useState('presets'); // 'presets' | 'custom' | 'upload'
-
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [avatarPop, setAvatarPop] = useState(false);
 
-  // Trigger a small pop animation on avatar change
   useEffect(() => {
     if (avatar) {
       setAvatarPop(true);
@@ -66,51 +52,13 @@ export const ProfileModal = ({ onClose }) => {
     }
   }, [avatar]);
 
-  // Helper to compute avatar url
-  const getAvatarUrl = (avatarStr) => {
-    if (!avatarStr) return 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=default';
-    if (avatarStr.startsWith('http://') || avatarStr.startsWith('https://')) return avatarStr;
-
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-    try {
-      const origin = new URL(apiUrl).origin;
-      return `${origin}${avatarStr}`;
-    } catch (_) {
-      return avatarStr;
-    }
-  };
-
-  const handleSelectPreset = (preset) => {
-    const url = `https://api.dicebear.com/7.x/${preset.style}/svg?seed=${preset.name}`;
-    setAvatar(url);
-    setCustomSeed('');
-    setError(null);
-  };
-
-  const handleCustomSeedChange = (e) => {
-    const val = e.target.value;
-    setCustomSeed(val);
-    if (val.trim()) {
-      const url = `https://api.dicebear.com/7.x/${customStyle}/svg?seed=${val.trim()}`;
-      setAvatar(url);
-    }
-  };
-
-  const handleCustomStyleChange = (e) => {
-    const style = e.target.value;
-    setCustomStyle(style);
-    if (customSeed.trim()) {
-      const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${customSeed.trim()}`;
-      setAvatar(url);
-    }
-  };
-
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file (PNG, JPG, SVG, etc.)');
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload a JPG, JPEG, or PNG image.');
       return;
     }
 
@@ -131,6 +79,11 @@ export const ProfileModal = ({ onClose }) => {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatar('');
+    setError(null);
   };
 
   const handleSaveProfile = async (e) => {
@@ -160,12 +113,8 @@ export const ProfileModal = ({ onClose }) => {
     }
   };
 
-  const tabBtnClass = (active) =>
-    `flex-1 py-2 px-3 text-sm font-bold transition-all doodle-border ${
-      active
-        ? 'bg-indigo-500 text-white shadow-[2px_2px_0px_0px_#1e293b]'
-        : 'bg-white text-slate-700 hover:bg-indigo-50 hover:-rotate-1'
-    }`;
+  const avatarUrl = getAvatarUrl(avatar);
+  const userInitial = (name || user?.name || '?').charAt(0).toUpperCase();
 
   return (
     <div
@@ -178,7 +127,7 @@ export const ProfileModal = ({ onClose }) => {
         style={{ animation: 'profileSlideUp 0.35s ease-out' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Corner doodle decorations */}
+        {/* Corner decorations */}
         <div className="absolute top-3 left-3 text-indigo-300 opacity-50 pointer-events-none select-none">
           <StarDoodle />
         </div>
@@ -222,7 +171,7 @@ export const ProfileModal = ({ onClose }) => {
         <div className="grid gap-6 md:grid-cols-3">
           {/* ─── Avatar Section ─── */}
           <div className="md:col-span-1 flex flex-col items-center gap-4">
-            {/* Avatar frame with tape effect */}
+            {/* Avatar frame */}
             <div className="relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-14 h-5 bg-amber-200/70 border border-amber-300 rounded-sm transform -rotate-2 z-10" />
               <div
@@ -230,12 +179,18 @@ export const ProfileModal = ({ onClose }) => {
                   avatarPop ? 'scale-110 rotate-0' : 'hover:rotate-0 hover:scale-105'
                 }`}
               >
-                <img
-                  src={getAvatarUrl(avatar)}
-                  alt="Profile Avatar"
-                  className="w-full h-full object-cover"
-                  style={{ borderRadius: '12px' }}
-                />
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                    style={{ borderRadius: '12px' }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900" style={{ borderRadius: '12px' }}>
+                    <span className="text-5xl font-bold text-indigo-400">{userInitial}</span>
+                  </div>
+                )}
                 {isUploading && (
                   <div className="absolute inset-0 bg-white/80 flex items-center justify-center font-bold text-slate-800">
                     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
@@ -254,7 +209,7 @@ export const ProfileModal = ({ onClose }) => {
               ref={fileInputRef}
               onChange={handleFileUpload}
               className="hidden"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
             />
             <button
               type="button"
@@ -262,13 +217,24 @@ export const ProfileModal = ({ onClose }) => {
               disabled={isUploading}
               className="doodle-button bg-indigo-50 text-indigo-600 text-sm py-1.5 w-full hover:bg-indigo-500 hover:text-white"
             >
-              {isUploading ? 'Uploading...' : '\uD83D\uDCF7 Upload Photo'}
+              {isUploading ? 'Uploading...' : '📷 Upload Photo'}
             </button>
-            <p className="text-xs text-slate-400 text-center italic">JPG, PNG, or SVG. Max 10MB.</p>
+
+            {avatarUrl && (
+              <button
+                type="button"
+                onClick={handleRemoveAvatar}
+                className="text-xs text-rose-500 hover:text-rose-700 font-bold underline"
+              >
+                Remove photo
+              </button>
+            )}
+
+            <p className="text-xs text-slate-400 text-center italic">JPG, PNG, or WebP. Max 10MB.</p>
 
             {/* Member since badge */}
             <div className="w-full doodle-border bg-amber-50 p-3 text-center transform rotate-1 hover:rotate-0 transition-transform">
-              <p className="text-xs font-bold text-amber-600 uppercase tracking-wide">\u2605 Member Since</p>
+              <p className="text-xs font-bold text-amber-600 uppercase tracking-wide">★ Member Since</p>
               <p className="text-sm font-bold text-slate-700 mt-1">
                 {user?.createdAt
                   ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -276,20 +242,20 @@ export const ProfileModal = ({ onClose }) => {
               </p>
             </div>
 
-            {/* Quick stats doodle card */}
+            {/* Display Name card */}
             <div className="w-full doodle-border bg-white p-3 text-center transform -rotate-1 hover:rotate-0 transition-transform">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Display Name</p>
               <p className="text-lg font-bold text-indigo-600 mt-1 truncate">{name || user?.name || '---'}</p>
             </div>
           </div>
 
-          {/* ─── Details & Avatar Selection ─── */}
+          {/* ─── Details Section ─── */}
           <div className="md:col-span-2 space-y-5">
             <form onSubmit={handleSaveProfile} className="space-y-4">
               {/* Email (read-only) */}
               <div>
                 <label className="block text-lg font-bold text-slate-700 mb-1 flex items-center gap-2">
-                  <span className="inline-block w-5 h-5 bg-slate-200 doodle-border rounded-full text-xs flex items-center justify-center">\uD83D\uDD12</span>
+                  <span className="inline-block w-5 h-5 bg-slate-200 doodle-border rounded-full text-xs flex items-center justify-center">🔒</span>
                   Email (Locked)
                 </label>
                 <input
@@ -303,7 +269,7 @@ export const ProfileModal = ({ onClose }) => {
               {/* Display Name */}
               <div>
                 <label className="block text-lg font-bold text-slate-700 mb-1 flex items-center gap-2">
-                  <span className="inline-block w-5 h-5 bg-indigo-100 doodle-border rounded-full text-xs flex items-center justify-center">\u270F</span>
+                  <span className="inline-block w-5 h-5 bg-indigo-100 doodle-border rounded-full text-xs flex items-center justify-center">✏</span>
                   Display Name
                 </label>
                 <input
@@ -320,7 +286,7 @@ export const ProfileModal = ({ onClose }) => {
               {/* Bio */}
               <div>
                 <label className="block text-lg font-bold text-slate-700 mb-1 flex items-center gap-2">
-                  <span className="inline-block w-5 h-5 bg-rose-100 doodle-border rounded-full text-xs flex items-center justify-center">\uD83D\uDCDD</span>
+                  <span className="inline-block w-5 h-5 bg-rose-100 doodle-border rounded-full text-xs flex items-center justify-center">📝</span>
                   Bio
                 </label>
                 <textarea
@@ -333,121 +299,47 @@ export const ProfileModal = ({ onClose }) => {
                 <p className="text-xs text-slate-400 text-right mt-1">{bio.length}/500</p>
               </div>
 
-              {/* ─── Avatar Selection Tabs ─── */}
+              {/* ─── Profile Picture Upload Area ─── */}
               <div>
                 <label className="block text-lg font-bold text-slate-700 mb-2 flex items-center gap-2">
-                  <span className="inline-block w-5 h-5 bg-amber-100 doodle-border rounded-full text-xs flex items-center justify-center">\uD83C\uDFA8</span>
-                  Choose a Doodle Avatar
+                  <span className="inline-block w-5 h-5 bg-amber-100 doodle-border rounded-full text-xs flex items-center justify-center">🖼</span>
+                  Profile Picture
                 </label>
 
-                <div className="flex gap-2 mb-3">
-                  <button type="button" onClick={() => setActiveTab('presets')} className={tabBtnClass(activeTab === 'presets')}>
-                    Presets
-                  </button>
-                  <button type="button" onClick={() => setActiveTab('custom')} className={tabBtnClass(activeTab === 'custom')}>
-                    Custom Seed
-                  </button>
-                  <button type="button" onClick={() => setActiveTab('upload')} className={tabBtnClass(activeTab === 'upload')}>
-                    Upload
+                <div
+                  className="doodle-border bg-white p-6 text-center cursor-pointer hover:bg-indigo-50 transition-colors group"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  {avatarUrl ? (
+                    <>
+                      <img
+                        src={avatarUrl}
+                        alt="Current profile"
+                        className="w-24 h-24 mx-auto object-cover doodle-border mb-3"
+                        style={{ borderRadius: '12px' }}
+                      />
+                      <p className="text-lg font-bold text-slate-700">Click to change your photo</p>
+                      <p className="text-sm text-slate-500 italic">JPG, PNG, WebP &middot; Max 10MB</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-5xl mb-3 group-hover:animate-wiggle inline-block">🖼</div>
+                      <p className="text-lg font-bold text-slate-700">Drop your picture here</p>
+                      <p className="text-sm text-slate-500 italic">or click to browse &middot; JPG, PNG, WebP &middot; Max 10MB</p>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fileInputRef.current.click();
+                    }}
+                    disabled={isUploading}
+                    className="doodle-button bg-indigo-50 text-indigo-600 text-sm py-2 px-6 mt-4 hover:bg-indigo-500 hover:text-white inline-block"
+                  >
+                    {isUploading ? 'Uploading...' : 'Choose File'}
                   </button>
                 </div>
-
-                {/* Presets Tab */}
-                {activeTab === 'presets' && (
-                  <div className="doodle-border bg-white p-4" style={{ animation: 'profileFadeIn 0.2s ease-out' }}>
-                    <p className="text-sm text-slate-500 italic mb-3">Pick a character that represents you:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {PRESET_SEEDS.map((preset) => {
-                        const presetUrl = `https://api.dicebear.com/7.x/${preset.style}/svg?seed=${preset.name}`;
-                        const isSelected = avatar === presetUrl;
-                        return (
-                          <button
-                            key={preset.name}
-                            type="button"
-                            onClick={() => handleSelectPreset(preset)}
-                            className={`group flex items-center gap-1.5 px-3 py-2 doodle-border text-sm transition-all hover:scale-105 active:scale-95 ${
-                              isSelected
-                                ? 'bg-indigo-100 border-indigo-400 shadow-[2px_2px_0px_0px_#6366f1]'
-                                : 'bg-white text-slate-800 hover:bg-indigo-50'
-                            }`}
-                          >
-                            <img
-                              src={presetUrl}
-                              alt={preset.name}
-                              className={`w-6 h-6 transition-transform ${isSelected ? 'scale-110' : 'group-hover:rotate-12'}`}
-                            />
-                            <span className="font-bold">{preset.name}</span>
-                            {isSelected && <span className="text-indigo-500">\u2713</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Custom Seed Tab */}
-                {activeTab === 'custom' && (
-                  <div className="doodle-border bg-white p-4 space-y-3" style={{ animation: 'profileFadeIn 0.2s ease-out' }}>
-                    <p className="text-sm text-slate-500 italic">Type any word to generate a unique avatar:</p>
-                    <div className="flex gap-2">
-                      <select
-                        value={customStyle}
-                        onChange={handleCustomStyleChange}
-                        className="doodle-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:rotate-1 transition-transform"
-                      >
-                        {AVATAR_STYLES.map((s) => (
-                          <option key={s.value} value={s.value}>
-                            {s.icon} {s.label}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="text"
-                        value={customSeed}
-                        onChange={handleCustomSeedChange}
-                        placeholder="Type a seed word..."
-                        className="flex-1 doodle-border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:-rotate-1 transition-transform placeholder:text-slate-300"
-                      />
-                    </div>
-                    {customSeed.trim() && (
-                      <div className="flex items-center gap-3 p-2 bg-indigo-50 doodle-border">
-                        <img
-                          src={getAvatarUrl(avatar)}
-                          alt="Preview"
-                          className="w-12 h-12 doodle-border bg-white p-1"
-                        />
-                        <div>
-                          <p className="text-sm font-bold text-slate-700">Preview</p>
-                          <p className="text-xs text-slate-500 italic">Style: {AVATAR_STYLES.find((s) => s.value === customStyle)?.label} / Seed: "{customSeed.trim()}"</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Upload Tab */}
-                {activeTab === 'upload' && (
-                  <div
-                    className="doodle-border bg-white p-6 text-center cursor-pointer hover:bg-indigo-50 transition-colors group"
-                    onClick={() => fileInputRef.current.click()}
-                    style={{ animation: 'profileFadeIn 0.2s ease-out' }}
-                  >
-                    <div className="text-5xl mb-3 group-hover:animate-wiggle inline-block">\uD83D\uDDBC</div>
-                    <p className="text-lg font-bold text-slate-700">Drop your picture here</p>
-                    <p className="text-sm text-slate-500 italic">or click to browse &middot; JPG, PNG, SVG &middot; Max 10MB</p>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current.click();
-                      }}
-                      disabled={isUploading}
-                      className="doodle-button bg-indigo-50 text-indigo-600 text-sm py-2 px-6 mt-4 hover:bg-indigo-500 hover:text-white inline-block"
-                    >
-                      {isUploading ? 'Uploading...' : 'Choose File'}
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* ─── Action Buttons ─── */}
@@ -472,7 +364,7 @@ export const ProfileModal = ({ onClose }) => {
                       Saving...
                     </span>
                   ) : (
-                    '\u2728 Save Profile'
+                    '✨ Save Profile'
                   )}
                 </button>
               </div>
