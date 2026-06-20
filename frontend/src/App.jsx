@@ -7,6 +7,8 @@ import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import MeetingRoom from './pages/MeetingRoom.jsx';
+import IntroPreview from './pages/IntroPreview.jsx';
+import SplashScreen from './components/SplashScreen.jsx';
 import './App.css';
 
 const RequireAuth = ({ children }) => {
@@ -90,6 +92,7 @@ const AnimatedRoutes = () => {
             </RequireAuth>
           }
         />
+        <Route path="/intro" element={<IntroPreview />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>
@@ -100,9 +103,11 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <div className="min-h-screen bg-[#fffaf0] dark:bg-slate-900 transition-colors duration-300">
-          <AnimatedRoutes />
-        </div>
+        <SplashScreen>
+          <div className="min-h-screen bg-[#fffaf0] dark:bg-slate-900 transition-colors duration-300">
+            <AnimatedRoutes />
+          </div>
+        </SplashScreen>
       </AuthProvider>
     </ThemeProvider>
   );
