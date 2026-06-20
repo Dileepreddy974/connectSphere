@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { BsFileText, BsLightning, BsX, BsArrowClockwise, BsStar, BsEmojiSmile } from 'react-icons/bs';
 import { aiService } from '../../services';
@@ -10,12 +10,7 @@ const MeetingSummaryPanel = ({ roomId, onClose }) => {
   const [activeTab, setActiveTab] = useState('summary');
   const [error, setError] = useState(null);
 
-  // Fetch existing summaries
-  useEffect(() => {
-    fetchSummaries();
-  }, [roomId]);
-
-  const fetchSummaries = async () => {
+  const fetchSummaries = useCallback(async () => {
     setLoading(true);
     try {
       const res = await aiService.getSummaries(roomId);
@@ -25,7 +20,12 @@ const MeetingSummaryPanel = ({ roomId, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roomId]);
+
+  // Fetch existing summaries
+  useEffect(() => {
+    fetchSummaries();
+  }, [fetchSummaries]);
 
   const handleGenerate = async () => {
     setGenerating(true);

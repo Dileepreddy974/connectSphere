@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { BsBarChartFill, BsX, BsArrowClockwise, BsLightning, BsChatQuote, BsQuestionCircle } from 'react-icons/bs';
 import { aiService } from '../../services';
@@ -28,11 +28,7 @@ const SpeakerAnalytics = ({ roomId, onClose }) => {
   const [expandedSpeaker, setExpandedSpeaker] = useState(null);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [roomId]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     try {
       const res = await aiService.getSpeakerAnalytics(roomId);
@@ -42,7 +38,11 @@ const SpeakerAnalytics = ({ roomId, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roomId]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const handleAnalyze = async () => {
     setAnalyzing(true);

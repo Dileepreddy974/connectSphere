@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BsCheckSquare, BsX, BsArrowClockwise, BsLightning, BsTrash } from 'react-icons/bs';
 import { aiService } from '../../services';
@@ -24,11 +24,7 @@ const ActionItemsPanel = ({ roomId, onClose }) => {
   const [filter, setFilter] = useState('all');
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchItems();
-  }, [roomId, filter]);
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
       const statusFilter = filter === 'all' ? null : filter;
@@ -39,7 +35,11 @@ const ActionItemsPanel = ({ roomId, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roomId, filter]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   const handleExtract = async () => {
     setExtracting(true);
